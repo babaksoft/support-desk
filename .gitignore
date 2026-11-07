@@ -1,0 +1,34 @@
+# Python and local tools
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
+build/
+dist/
+
+# Secrets and local settings
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.vscode/
+.DS_Store
+
+# Local runtime data and generated evidence
+.local/
+artifacts/
+telemetry/
+*.log
+
+# Infrastructure local state
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
