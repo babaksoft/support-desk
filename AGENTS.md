@@ -61,8 +61,10 @@ implementations with Db; leave domain protocol names unprefixed.
 - Four-space indentation; complete type hints on every function.
 - Complete Google-style docstrings on classes, methods, and functions, with a
   single blank line after the docstring.
-- In Args and Raises, put each item name on its own line and indent its description.
-  Omit Args without arguments and Returns for None-returning functions.
+- Use the same section formatting and description style in class and function
+  docstrings. In Attributes, Args, and Raises, put each item name on its own line
+  and indent its description. Omit Args without arguments and Returns for
+  None-returning functions.
 - Absolute package imports. Export principal architecture symbols at their owning
   package boundary and import them there except within that package.
 - snake_case modules/functions; PascalCase classes; test_<behavior>.py modules and
@@ -77,6 +79,11 @@ implementations with Db; leave domain protocol names unprefixed.
   Y" or "never does Z."
 - Pydantic domain values and application schemas; freeze immutable values. Every
   Pydantic model has an Attributes section and descriptions for every field.
+- Prefer module-scope definitions over functions or classes nested inside functions
+  or methods. Prefix internal functions, classes, and methods with an underscore;
+  pass dependencies explicitly or keep instance state on a module-scope class.
+  Use nested definitions only when a required closure or framework constraint
+  makes a module-scope definition impractical, and explain the reason locally.
 - Prefer internal helpers at the bottom; use future annotations when needed.
 - Keep code and explanations purpose-specific. Avoid speculative abstractions.
 

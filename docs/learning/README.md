@@ -7,3 +7,5 @@ resulting decision. Link to reproducible evidence without committing sensitive d
 
 Code walkthroughs can stay in discussion unless they establish durable design
 knowledge. This directory is not a requirement to write an essay for every change.
+
+- [Slice 1.1: bounded evidence and the agent tool loop](slice-1.1.md)

@@ -5,8 +5,9 @@
 The product scope and six-stage progression are agreed. Repository preparation is
 done: the initial commit is pushed and `origin` points to the GitHub repository
 of the same name. The Stage 1 plan is reviewed and approved, subject to further
-review questions. Its work is divided into smaller review units below. Application
-features and deployment have not started. Preparation A is done; the user reports
+review questions. Its work is divided into smaller review units below. Slice 1.1
+local API implementation is verified; paid model smoke and completed formatting
+verification remain pending. Deployment has not started. Preparation A is done; the user reports
 all GitHub CI checks passed. Preparation B is done: Boardlight's initial reference
 pack and example questions are authored and checked. Plan implementation one stage
 at a time and update status only with verification evidence.

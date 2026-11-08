@@ -1,7 +1,8 @@
 # Stage 1: Walking Skeleton
 
 Status: reviewed and approved, subject to further review questions. Repository
-preparation and units A/B are done; feature implementation has not started.
+preparation and units A/B are done; Slice 1.1 local implementation is verified,
+with the paid model smoke run and completed Black check still pending.
 Verification evidence is recorded below. The breakdown below makes
 review units smaller while preserving the approved outcome and release gate.
 
@@ -95,6 +96,43 @@ Learning: inspect the actual tool call/result and explain the tool/schema bounda
 Verification: deterministic fake-agent API tests, valid references, timeout/invalid
 argument handling, and an explicitly enabled budgeted model smoke run. Prepare a
 container and health/readiness checks for this API increment.
+
+Implementation record (2026-11-08): added the typed question/draft boundaries,
+`POST /questions`, a packaged Boardlight v1 lookup, and an OpenAI Agents SDK adapter.
+The application admits one generation per process with a 45-second deadline.
+Input/body, turn, tool-call, and output-token limits are enforced in code;
+provider retries are disabled. Citations must identify evidence actually returned
+by the tool. Drafts remain unreviewed; these checks establish source identity,
+not semantic grounding. SDK traces are disabled and Responses requests set
+`store=False`. See the [local run/configuration path](../../README.md#run-the-local-api)
+and [learning conclusion](../learning/slice-1.1.md).
+
+Verification: 23 deterministic tests passed, including the actual SDK loop with
+synthetic provider responses, invalid tool arguments, unread citations,
+insufficient-evidence output, request bounds, deadline/cancellation, concurrency,
+inner-layer dependencies, and evidence parity. Tests passed outside the execution
+sandbox; the restricted environment stalled in thread/event-loop execution.
+isort, Ruff, strict mypy, lock consistency, source/wheel builds, relative links,
+and `git diff --check` passed. The wheel includes all four reference documents.
+The non-root Docker image built; its server, liveness, unconfigured readiness,
+and packaged lookup passed a smoke check with external networking disabled.
+Black reformatted nine files and reported completion, then exited 124 at the
+30-second cap; it was not retried. A completed CI formatting check remains pending.
+
+Paid smoke proposal (not executed or approved): use
+`gpt-5.4-mini-2026-03-17` for exactly two authored questions: Free board capacity
+(expect `BL-PLANS` v1) and refund policy (expect insufficient evidence).
+Proposed total experiment budget: USD 0.25; at most six model calls and 6,144
+output tokens across both attempts, with no automatic retries. Stop after the two
+attempts, including failures; further attempts need a new agreed budget. This is
+an experiment budget, not an account-level spending control. The
+[official model page](https://developers.openai.com/api/docs/models/gpt-5.4-mini)
+lists Responses, function calling, and structured outputs, with standard input/
+output prices of USD 0.75/4.50 per million tokens as checked on 2026-11-08.
+Only authored questions and product evidence go to OpenAI; SDK tracing stays off.
+Record model access, actual call/tool behavior, draft review, usage, and estimated
+cost after approval. Live inference compatibility and grounding remain unverified;
+Slice 1.1 is not complete until that evidence and formatting verification exist.
 
 ## Slice 1.2: Ask a question through Streamlit
 
