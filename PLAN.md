@@ -2,10 +2,14 @@
 
 ## Working agreement and status
 
-The product scope and six-stage progression are agreed. This document and the
-Stage 1 slice plan are initial drafts for review. Repository preparation is in
-progress; no application feature or deployment is complete. Plan implementation
-one stage at a time and update status only with verification evidence.
+The product scope and six-stage progression are agreed. Repository preparation is
+done: the initial commit is pushed and `origin` points to the GitHub repository
+of the same name. The Stage 1 plan is reviewed and approved, subject to further
+review questions. Its work is divided into smaller review units below. Application
+features and deployment have not started. Preparation A has implemented packaging,
+development tools, tests, and CI configuration; Black verification is incomplete
+and remote CI execution is pending. Plan implementation one stage at a time and
+update status only with verification evidence.
 
 Primary learning: AI Engineering foundations, agent frameworks, evaluation,
 observability, LLMOps, and DevOps. Full-stack infrastructure is supporting work.
@@ -113,18 +117,24 @@ Use deterministic tests in normal CI and explicitly enabled, budgeted networked
 evaluations. Establish release thresholds from baselines and human calibration.
 Changes ship with applicable integration checks, documentation, and recovery guidance.
 
-## Open choices before implementation or deployment
+## Prerequisites and open choices
 
-- Confirm the initial drafts and Python/SDK compatibility before locking dependencies.
+- Repository preparation, remote configuration, and Stage 1 plan review are done.
+- OpenAI credits and an active AWS account with Bedrock model quotas are available.
+  OpenAI's Python SDK and Bedrock Converse are the intended provider interfaces;
+  verify model-specific capabilities before using either in an adapter. Start with
+  one provider path; add another when a comparison justifies it.
+- Python 3.12 meets the checked OpenAI SDK Python requirements. Recheck compatibility
+  and APIs when adding runtime dependencies in the API slice.
 - Choose the fictional SaaS product and author the first small reference pack.
-- Choose initial model access and evaluation budget before networked runs.
-- Choose the GitHub remote/visibility and fill in the MIT copyright holder before
-  publishing.
-- Choose AWS account/region, infrastructure tool, access mechanism, and budget before
-  provisioning. Deployment itself requires an explicit execution request.
+- Choose a cheaper capable initial model and explicit smoke-run/evaluation budgets
+  before networked runs. Available credits and quotas do not set spending limits.
+- Confirm the target AWS account/region, infrastructure tool, access mechanism, and
+  budget before provisioning. Deployment requires an explicit execution request.
 - Decide local/cloud trace destinations, export policy, retention, redaction, and
-  durable telemetry storage before the first live release. Do not assume Compose
-  volumes map directly to cloud persistence.
+  durable telemetry storage before the first live release. Set framework exporter
+  behavior before the first model run. Do not assume Compose volumes map directly
+  to cloud persistence.
 
 Resolve choices when they affect the active slice; independent local work can proceed.
 

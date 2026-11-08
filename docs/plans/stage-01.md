@@ -1,121 +1,187 @@
 # Stage 1: Walking Skeleton
 
-Status: initial draft; implementation has not started.
+Status: reviewed and approved, subject to further review questions. Repository
+preparation is done. Preparation A is implemented with verification limitations
+recorded below; feature implementation has not started. The breakdown below makes
+review units smaller while preserving the approved outcome and release gate.
 
 ## Outcome and boundaries
 
 An operator asks about a fictional SaaS product, receives an evidence-based draft,
-saves it, and reopens it in a live environment. Introduce OpenAI Agents SDK only;
+saves it, and reopens it in a live environment. Introduce OpenAI Agents SDK first;
 LangChain/pgvector, LangGraph, and CrewAI arrive in their planned stages. Use a small
-fixed, authored reference pack rather than embedding search. Full case resolution,
-account diagnostics, and FAQ proposals are not part of this stage.
+fixed, authored reference pack. Clearly label generated answers as unreviewed drafts.
 
 Primary learning is the agent/tool loop, evidence-based behavior, evaluation,
-telemetry, and delivery. Full-stack tasks receive the explanation necessary to
-understand their boundaries without repeating introductory courses.
+telemetry, and delivery. Keep infrastructure explanations focused on consequential
+choices. Use one provider path initially; choose the model after checking current
+capabilities, SDK compatibility, and cost.
 
-## Preparation: establish an executable foundation
+## Review and delivery discipline
 
-Configure Python packaging, uv lock, development checks, testing, and pull-request
-CI. Establish minimal domain/application/adapter boundaries and local PostgreSQL.
-Create only needed packages. Verify SDK compatibility and current official APIs.
-This is repository preparation, not a shipped feature.
+Implement one review unit at a time. Split a unit further when it introduces several
+independent concepts; file count alone is not the review criterion. Each feature
+slice adds a usable improvement, appropriate verification, and a deployable increment.
+Prepare deployment artifacts with the local path, then deploy early in Slice 1.3.
+Update the deployment after subsequent slices when cloud execution is authorized.
 
-Verification: clean locked install; familiar quality checks; deterministic tests
-without model keys; CI explicitly starts any required database service. Add the
-README's canonical development path only after running it successfully.
+For each unit, state a hypothesis, explain the main learning concept, record
+verification evidence, and capture a concise conclusion. Complete release evidence
+remains required even when an individual change is small.
 
-## Slice 1.1: Answer one product question and deploy it
+## Preparation A: Establish Python tooling and CI
 
-Deliver a Streamlit question form calling FastAPI through a typed use case. A real
-Agents SDK adapter uses one bounded reference lookup tool and returns a structured
-draft with source references or an insufficient-evidence result. Clearly label the
-output as an unreviewed draft. Use synthetic/authored inputs only.
+Configure packaging, uv lock, Black, isort, Ruff, mypy, pytest, and pull-request CI
+for `master`. Verify Python/SDK compatibility before selecting dependency versions;
+add runtime dependencies only as needed. Create packages with concrete responsibilities.
 
-Deploy this narrow path to ECS/Fargate early. Establish infrastructure as code,
-image build/push, GitHub OIDC, secrets, access control, HTTPS, readiness, and smoke
-verification. Document rollback and teardown. Start with one bounded request at a
-time rather than a general long-running workflow engine.
+Verification: clean locked install and passing applicable checks; default tests
+need no model keys. Cap Black at 30 seconds and run other checks independently.
+Document the canonical development path only after verifying it.
 
-Before cloud/model execution: settle model access, AWS destination, access mechanism,
-telemetry export policy, and explicit budgets. Prepare code and infrastructure for
-review before requesting any required live execution approval.
+Verification record (2026-11-08): clean `uv sync --locked` into a fresh environment,
+isort, Ruff, strict mypy, the isolated package-import test, source/wheel builds,
+and an isolated wheel installation/import passed on Python 3.12.3 with uv 0.12.7.
+The lockfile consistency check passed. Black reported both files unchanged but
+exited with status 124 at the 30-second cap; it was not retried and remains
+incomplete. The GitHub workflow is configured; remote execution is pending.
 
-Learning: inspect the actual tool call and result; explain the tool/schema boundary
-and how the agent is constrained. Authorization and size/turn/time limits belong
-in code, not just prompts.
+Compatibility check: PyPI metadata for `openai` 3.46.0 and `openai-agents` 0.24.0
+requires Python >=3.10. Retain Python 3.12; verify APIs and full dependency resolution
+when adding runtime SDKs. This unit adds development dependencies only.
 
-Verification: fake-agent API tests; real-model smoke run explicitly enabled; source
-references exist in the fixed pack; an unanswerable question does not invent facts;
-unauthorized requests fail; live journey works after deployment and rollback.
+Learning hypothesis: locked installation and an import from outside the repository
+catch packaging errors before framework work begins. The clean install, isolated
+import test, and distribution builds support that approach. Tooling verification
+still needs a successful Black check and a remote CI run.
 
-## Slice 1.2: Save and reopen a support interaction
+## Preparation B: Define the product evidence
 
-Add PostgreSQL interaction/attempt persistence, repository contracts, SQLAlchemy
-adapters, and a reviewed Alembic baseline. Show saved questions and drafts in the UI.
-Use durable cloud PostgreSQL rather than application-container storage.
+Choose the fictional SaaS product and author a small versioned reference pack with
+stable source identifiers. Cover plans, upgrade behavior, account access, and basic
+troubleshooting. Include answerable and unanswerable example questions with expected
+evidence. Expand these into the evaluation baseline later.
 
-Define what is persisted when inference fails, how retries are identified, and how
-duplicate submissions are handled. Do not hold a database transaction across a model
-call. This interaction record is not the full Stage 3 case lifecycle.
+Verification: manually check that stated product rules are consistent and expected
+answers are supported. This pack becomes the input for the first tool and tests.
+Preparation A and B establish inputs and tooling; they do not ship an application.
 
-Learning: explain provenance and failure semantics around a nondeterministic external
-call. Keep familiar CRUD scaffolding concise.
+## Slice 1.1: Generate a grounded answer through the API
 
-Verification: disposable-PostgreSQL integration/migration tests; API save/reopen tests;
-persisted result survives application task replacement; secrets are absent from records.
-Deploy and demonstrate the saved interaction journey.
+Implement typed domain/application boundaries, a bounded reference lookup tool,
+an Agents SDK adapter, and a FastAPI endpoint. Return a structured draft with source
+references or an insufficient-evidence result. Use one bounded request at a time.
+Enforce request, turn, token, time, and tool limits in code; bound retries.
 
-## Slice 1.3: Make agent behavior and operations visible
+Before real inference, choose the initial model, explicit run budget, and framework
+trace/export policy. Available credits are not permission for unspecified spending.
 
-Instrument application/agent/tool spans and correlate them in Phoenix. Add Prometheus
-metrics and a Grafana dashboard for requests, latency, errors, tool failures, and
-available model usage/estimated cost. Keep labels bounded. Provision local Compose
-services and the chosen cloud telemetry collection/storage arrangement.
+Learning: inspect the actual tool call/result and explain the tool/schema boundary.
+Verification: deterministic fake-agent API tests, valid references, timeout/invalid
+argument handling, and an explicitly enabled budgeted model smoke run. Prepare a
+container and health/readiness checks for this API increment.
 
-Document trace content, redaction, retention, access, destinations, and export toggles.
-Disable or configure additional framework exporters deliberately. Confirm which
-calls and traces leave the environment. Do not allow telemetry failures to fail a
-successful support interaction.
+## Slice 1.2: Ask a question through Streamlit
 
-Learning: use a trace to explain a failed or ungrounded answer; distinguish tracing,
-metrics, logs, and evaluation. Explain estimated cost limitations.
+Add the question form, draft/evidence display, and useful failure messages.
+Streamlit calls FastAPI through typed interfaces. Add local Compose orchestration
+and verify the UI-to-API journey.
 
-Verification: inspect a real correlated trace and dashboard; exercise a tool error
-and unavailable collector; verify redaction and access. Deploy and demonstrate.
+Learning: follow one request across UI, application, and agent boundaries.
+Verification: API contract checks and a local UI demonstration with authored inputs;
+include screenshots in review. Keep the first model run explicitly enabled.
 
-## Slice 1.4: Establish an evidence-based evaluation baseline
+## Slice 1.3: Deploy the question-answer journey
 
-Author a small versioned set of answerable, unanswerable, ambiguous, and adversarial
-questions with expected supporting evidence. Add RAGAS-based grounded-answer
-assessment where appropriate, deterministic reference/schema/tool checks, and a
-human review rubric. Retrieval ranking metrics wait for Stage 2.
+Establish infrastructure as code, image build/push, GitHub OIDC, secrets, operator
+access, HTTPS, and ECS/Fargate deployment. Enforce authorization in application
+code. Document smoke verification, immutable image identities, rollback, and teardown.
 
-Record prompt/model/judge configuration, source versions, outcomes, latency, and
-estimated cost. Run a controlled prompt comparison. Calibrate judge output against
-human review before selecting blocking quality thresholds.
+Before provisioning, agree the AWS account/region, infrastructure tool, access
+mechanism, data flow, and cloud budget. Prepare reviewable infrastructure before
+requesting live execution. Include a durable PostgreSQL destination in the design
+before adding persistence in the next slice.
 
-Learning: explain what each metric can and cannot establish. Demonstrate one case
-where a plausible answer fails grounding or a judge disagrees with human review.
+Learning: trace a release from commit to running image and distinguish spending
+alerts from enforced application limits.
+Verification: unauthorized requests fail; live ask/draft journey, health checks,
+smoke test, and rollback demonstration pass. Record remaining deployment limitations.
 
-Verification: repeatable budgeted evaluation command; no real model calls in default
-tests; separate explicitly enabled evaluation workflow. Ship any justified prompt
-improvement with baseline comparison evidence, not an arbitrary score target.
+## Slice 1.4: Persist interactions and generation attempts
 
-## Slice 1.5: Validate and document the complete release
+Define saved success/failure data, retry identity, duplicate-submission behavior,
+and retention. Add repository contracts, Db-prefixed SQLAlchemy adapters, a reviewed
+Alembic baseline, and local PostgreSQL. Keep transactions outside model calls.
+
+Learning: explain provenance and failure semantics around a nondeterministic call.
+Verification: disposable-PostgreSQL repository and migration tests; CI starts its
+required database explicitly. Default tests require no unstated services or keys.
+
+## Slice 1.5: Save and reopen through the UI
+
+Expose saved questions and drafts through API and UI. Provision the agreed durable
+cloud PostgreSQL storage and deploy the complete ask/save/reopen journey.
+
+Learning: distinguish a support interaction from the later durable case lifecycle.
+Verification: API save/reopen and duplicate-submission checks; persisted results
+survive application task replacement; secrets are absent from stored records.
+
+## Slice 1.6: Trace the agent journey in Phoenix
+
+Instrument and correlate application, agent, and tool spans. Provision local Phoenix
+and the agreed cloud collection/storage arrangement. Document trace content,
+redaction, retention, access, destinations, and export toggles. Configure additional
+framework exporters deliberately.
+
+Learning: use a real trace to explain a failed or ungrounded answer.
+Verification: inspect a correlated trace, exercise a tool error and unavailable
+collector, and verify redaction/access. Telemetry failure must preserve successful
+business outcomes. Deploy and demonstrate.
+
+## Slice 1.7: Add operational metrics and a dashboard
+
+Add Prometheus metrics and Grafana for requests, latency, errors, tool failures,
+and available model usage/estimated cost. Keep labels bounded; record the pricing
+basis and estimation limitations. Specify durable cloud telemetry storage separately
+from local Compose volumes.
+
+Learning: distinguish traces, metrics, logs, and billing ground truth.
+Verification: inspect the dashboard under success/failure requests; verify bounded
+labels and collector-outage behavior. Deploy and demonstrate.
+
+## Slice 1.8: Establish the evaluation baseline
+
+Expand the versioned examples to cover answerable, unanswerable, ambiguous, and
+adversarial questions. Add deterministic reference/schema/tool checks, a human
+review rubric, and RAGAS-based grounded-answer assessment where appropriate.
+Record prompt/model/judge configuration, evidence versions, latency, and estimated
+cost. Provide a separately enabled, budgeted evaluation command/workflow.
+
+Learning: explain what each metric establishes and where human review is needed.
+Verification: repeatable baseline results and one demonstrated grounding failure
+or judge/human disagreement. Default CI makes no real model calls.
+
+## Slice 1.9: Compare and improve one prompt
+
+Run a controlled prompt comparison against the baseline. Calibrate judge output
+against human review before choosing blocking quality thresholds. Ship a justified
+prompt improvement with measured evidence, or record why the baseline was retained.
+
+Learning: distinguish a plausible improvement from evidence of better behavior.
+Verification: versioned comparison inputs/configuration/results, cost, limitations,
+and a concise learning conclusion. Retrieval ranking metrics wait for Stage 2.
+
+## Slice 1.10: Validate the complete release
 
 Exercise provider timeout, invalid tool arguments, duplicate submission, application
-restart, and telemetry outage. Confirm request/turn/token/concurrency limits and
-bounded retries. Finish cost, access, data-flow, recovery, rollback, and teardown
-guidance. Add a small operator-facing failure/retry improvement if testing exposes
-one. Reuse previously passing checks unless changes justify rerunning them.
+restart, and telemetry outage. Confirm enforced limits and bounded retries. Finish
+cost, access, data-flow, recovery, rollback, and teardown guidance. Add a small
+operator-facing failure/retry improvement if testing exposes one. Reuse passing
+checks unless changes justify rerunning them.
 
-Learning: distinguish failure prevention, diagnosis, recovery, and cloud spending
-alerts from actual application-enforced limits.
-
-Verification: complete live ask/save/reopen journey; persisted data survives restart;
-one trace and dashboard; baseline evaluation evidence; deployment smoke check and
-rollback demonstration. Document remaining limitations and learning conclusions.
+Verification: live ask/save/reopen journey; persisted data survives restart; a real
+trace and dashboard; evaluation evidence; deployment smoke and rollback demonstration.
+Document remaining limitations and learning conclusions.
 
 ## Completion evidence
 

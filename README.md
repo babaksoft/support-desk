@@ -4,8 +4,9 @@ Support Desk is a Python learning project for building and operating a small,
 evidence-based support application for one fictional SaaS product. Its primary
 learning focus is AI Engineering, LLMOps, and DevOps.
 
-This repository currently contains the initial design and delivery plans. There
-is no runnable application or configured cloud deployment yet.
+This repository contains the design, delivery plans, and an installable Python
+package with development checks and CI configuration. There is no runnable
+application or configured cloud deployment yet.
 
 ## Product scope
 
@@ -28,12 +29,47 @@ use cases, and infrastructure adapters. FastAPI serves the application boundary;
 Streamlit provides the operator interface. Framework responsibilities and the
 planned production stack are recorded in [DESIGN.md](DESIGN.md).
 
-## Getting started
+## Development technology
 
-Start with the [master plan](PLAN.md) and the
-[Stage 1 plan](docs/plans/stage-01.md). Installation, configuration, database,
-deployment, and development-check commands will be documented when they exist
-and have been verified.
+Python 3.12 and uv manage the package and locked dependencies. Black and isort
+format code; Ruff checks lint, annotations, and Google-style docstrings; mypy checks
+types in strict mode; pytest runs deterministic tests. GitHub Actions configures
+independent checks for pull requests and pushes to `master`.
+
+## Quick start
+
+From the repository root, use Python 3.12 and uv 0.12.7 (the CI version).
+See the official [uv installation instructions](https://docs.astral.sh/uv/getting-started/installation/)
+if needed. Dependency installation is networked and downloads packages from PyPI;
+uv may also download Python if 3.12 is unavailable locally.
+
+```bash
+uv sync --locked
+```
+
+This creates `.venv` and installs the project and development tools from `uv.lock`.
+Subsequent `uv run` commands use that environment automatically. The current checks
+require no model credentials, database, or cloud services.
+
+## Development checks
+
+Run each check independently from the repository root:
+
+```bash
+timeout 30s uv run black --check src tests
+uv run isort --check-only src tests
+uv run ruff check src tests
+uv run mypy src tests
+uv run pytest -v
+```
+
+`timeout` requires GNU coreutils. If Black times out, record it as incomplete,
+continue the other checks, and do not retry it. CI runs checks as separate jobs
+with fail-fast disabled. Build the source distribution and wheel with `uv build`;
+generated files go into the ignored `dist/` directory.
+
+See the [Stage 1 plan](docs/plans/stage-01.md) for verification evidence and pending
+checks.
 
 ## Documentation map
 
