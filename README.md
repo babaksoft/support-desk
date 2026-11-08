@@ -10,7 +10,11 @@ application or configured cloud deployment yet.
 
 ## Product scope
 
-The intended product supports four use cases: answer a product question,
+The fictional supported product is Boardlight, a team task-board SaaS with Free and
+Pro workspace subscriptions. The [initial reference pack](docs/product/boardlight/README.md)
+defines its authored product rules and example questions.
+
+Support Desk has four intended use cases: answer a product question,
 investigate an account issue, review and resolve a case, and propose a knowledge
 improvement. Support responses and knowledge proposals require operator review.
 Initial data consists of authored documentation and synthetic customer records.
@@ -77,6 +81,7 @@ checks.
 - [DESIGN.md](DESIGN.md): intended behavior and architecture.
 - [PLAN.md](PLAN.md): delivery stages and completion criteria.
 - [Stage 1](docs/plans/stage-01.md): walking-skeleton slices.
+- [Boardlight](docs/product/boardlight/README.md): product evidence and example questions.
 - [Decisions](docs/decisions/README.md): concise architectural decisions.
 - [Learning record](docs/learning/README.md): measured experiments and lessons.
 

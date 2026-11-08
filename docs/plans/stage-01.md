@@ -1,8 +1,8 @@
 # Stage 1: Walking Skeleton
 
 Status: reviewed and approved, subject to further review questions. Repository
-preparation is done. Preparation A is implemented with verification limitations
-recorded below; feature implementation has not started. The breakdown below makes
+preparation and units A/B are done; feature implementation has not started.
+Verification evidence is recorded below. The breakdown below makes
 review units smaller while preserving the approved outcome and release gate.
 
 ## Outcome and boundaries
@@ -43,8 +43,9 @@ Verification record (2026-11-08): clean `uv sync --locked` into a fresh environm
 isort, Ruff, strict mypy, the isolated package-import test, source/wheel builds,
 and an isolated wheel installation/import passed on Python 3.12.3 with uv 0.12.7.
 The lockfile consistency check passed. Black reported both files unchanged but
-exited with status 124 at the 30-second cap; it was not retried and remains
-incomplete. The GitHub workflow is configured; remote execution is pending.
+exited with status 124 at the 30-second cap and was not retried locally. The user
+subsequently committed preparation A and reported all GitHub CI checks green,
+including Black, with steps completing in about 10 seconds. Preparation A is done.
 
 Compatibility check: PyPI metadata for `openai` 3.46.0 and `openai-agents` 0.24.0
 requires Python >=3.10. Retain Python 3.12; verify APIs and full dependency resolution
@@ -52,8 +53,9 @@ when adding runtime SDKs. This unit adds development dependencies only.
 
 Learning hypothesis: locked installation and an import from outside the repository
 catch packaging errors before framework work begins. The clean install, isolated
-import test, and distribution builds support that approach. Tooling verification
-still needs a successful Black check and a remote CI run.
+import test, and distribution builds support that approach. The reported successful
+CI run completes verification; the local Black timeout remains an environment
+limitation to keep distinct from a formatting failure.
 
 ## Preparation B: Define the product evidence
 
@@ -65,6 +67,19 @@ evidence. Expand these into the evaluation baseline later.
 Verification: manually check that stated product rules are consistent and expected
 answers are supported. This pack becomes the input for the first tool and tests.
 Preparation A and B establish inputs and tooling; they do not ship an application.
+
+Status: done. The user accepted Boardlight, a fictional team task-board SaaS.
+The [reference pack](../product/boardlight/README.md) contains four sources at
+version 1 with stable IDs, and eight example questions with expected evidence or
+explicit gaps. Reviewed limits, workspace subscription scope, activation timing,
+access, and troubleshooting for consistency; checked links and evidence targets.
+No model runs or account records were needed.
+
+Learning hypothesis: explicit workspace rules and evidence gaps should help separate
+general guidance from account-specific conclusions. Comparing the capacity and
+upgrade-guidance examples with the payment-status and refund questions shows the
+intended distinction in the authored material. Model adherence remains unmeasured;
+use these examples to check the first agent in Slice 1.1 and seed later evaluations.
 
 ## Slice 1.1: Generate a grounded answer through the API
 

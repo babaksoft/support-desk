@@ -6,10 +6,10 @@ The product scope and six-stage progression are agreed. Repository preparation i
 done: the initial commit is pushed and `origin` points to the GitHub repository
 of the same name. The Stage 1 plan is reviewed and approved, subject to further
 review questions. Its work is divided into smaller review units below. Application
-features and deployment have not started. Preparation A has implemented packaging,
-development tools, tests, and CI configuration; Black verification is incomplete
-and remote CI execution is pending. Plan implementation one stage at a time and
-update status only with verification evidence.
+features and deployment have not started. Preparation A is done; the user reports
+all GitHub CI checks passed. Preparation B is done: Boardlight's initial reference
+pack and example questions are authored and checked. Plan implementation one stage
+at a time and update status only with verification evidence.
 
 Primary learning: AI Engineering foundations, agent frameworks, evaluation,
 observability, LLMOps, and DevOps. Full-stack infrastructure is supporting work.
@@ -126,7 +126,9 @@ Changes ship with applicable integration checks, documentation, and recovery gui
   one provider path; add another when a comparison justifies it.
 - Python 3.12 meets the checked OpenAI SDK Python requirements. Recheck compatibility
   and APIs when adding runtime dependencies in the API slice.
-- Choose the fictional SaaS product and author the first small reference pack.
+- Boardlight, a fictional team task-board SaaS, is selected. The
+  [initial reference pack](docs/product/boardlight/README.md) and example questions
+  establish the product evidence for Slice 1.1.
 - Choose a cheaper capable initial model and explicit smoke-run/evaluation budgets
   before networked runs. Available credits and quotas do not set spending limits.
 - Confirm the target AWS account/region, infrastructure tool, access mechanism, and

@@ -1,13 +1,19 @@
 # Support Desk Design
 
-Last updated: 2026-11-07
+Last updated: 2026-11-08
 
 ## Purpose and scope
 
-Support Desk helps an operator support one fictional SaaS product. Its four core
-use cases are answering a product question, investigating an account issue,
+Support Desk helps an operator support Boardlight, a fictional team task-board
+SaaS product. Its four core use cases are answering a product question,
+investigating an account issue,
 reviewing and resolving a case, and proposing a knowledge improvement. Supported
 case categories are account access, billing questions, and technical troubleshooting.
+
+Boardlight accounts can belong to multiple workspaces. Each workspace has its own
+Free or Pro subscription; an upgrade applies to the selected workspace. The
+[versioned product evidence](docs/product/boardlight/README.md) defines plan limits,
+activation rules, access behavior, and basic troubleshooting.
 
 The recurring scenario is: “My account still shows the free plan after upgrading.”
 The operator uses product evidence and synthetic subscription information to
@@ -159,4 +165,5 @@ telemetry is collected and retained in cloud environments before live release.
 - [Repository conventions](AGENTS.md)
 - [Product overview](README.md)
 - [Stage 1 plan](docs/plans/stage-01.md)
+- [Boardlight product evidence](docs/product/boardlight/README.md)
 - [Decision index](docs/decisions/README.md)
