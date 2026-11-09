@@ -63,7 +63,7 @@ class AnswerDraft(BaseModel):
     )
 
     @model_validator(mode="after")
-    def _validate_evidence(self) -> Self:
+    def validate_evidence(self) -> Self:
         """Require supporting sources for answered questions.
 
         Returns:
