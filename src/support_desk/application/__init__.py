@@ -1,17 +1,15 @@
 """Application requests and bounded question answering."""
 
-from support_desk.application.questions import (
-    AnswerQuestion,
+from support_desk.application.errors import (
     GenerationBusy,
     GenerationFailed,
     GenerationTimedOut,
-    QuestionRequest,
 )
+from support_desk.application.questions import AnswerService
 
 __all__ = [
-    "AnswerQuestion",
+    "AnswerService",
     "GenerationBusy",
     "GenerationFailed",
     "GenerationTimedOut",
-    "QuestionRequest",
 ]

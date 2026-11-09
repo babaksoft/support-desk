@@ -1,10 +1,11 @@
 # Stage 1: Walking Skeleton
 
 Status: reviewed and approved, subject to further review questions. Repository
-preparation and units A/B are done; Slice 1.1 local implementation is verified,
-with the paid model smoke run and completed Black check still pending.
-Verification evidence is recorded below. The breakdown below makes
-review units smaller while preserving the approved outcome and release gate.
+preparation and units A/B are done. Slice 1.1 resumed for a focused design revision;
+its prior verification is superseded until the revised implementation is checked.
+The paid model smoke run and completed Black check also remain pending. Verification
+evidence is recorded below. The breakdown below makes review units smaller while
+preserving the approved outcome and release gate.
 
 ## Outcome and boundaries
 
@@ -106,6 +107,30 @@ by the tool. Drafts remain unreviewed; these checks establish source identity,
 not semantic grounding. SDK traces are disabled and Responses requests set
 `store=False`. See the [local run/configuration path](../../README.md#run-the-local-api)
 and [learning conclusion](../learning/slice-1.1.md).
+
+Design revision (2026-11-08): separated health and question routers, kept business
+values in the domain and the use-case request in the application layer, and added
+HTTP-only health and stable error schemas. Corrected the bounded ASGI request stream,
+declared Starlette directly, added an API-owned generic lifespan, and registered the
+OpenAI client only for enabled inference. Composition settings are immutable Pydantic
+values, direct asynchronous tests use pytest-asyncio, stable agent configuration is
+reused, executable limits are centralized, and architecture checks are recursive.
+Focused verification was added for these contracts. The original verification
+record below remains as historical context; the revision verification supersedes it.
+
+Revision verification: 41 deterministic tests passed outside the restricted sandbox,
+including API contracts, composition, body-stream replay, domain and application
+invariants, generic resource lifecycle, architecture rules, and the synthetic-provider
+SDK loop. Ruff, strict mypy, isort, lock consistency, `git diff --check`, OpenAPI
+generation, and source/wheel builds passed. The wheel contains both route modules
+and all four evidence documents.
+The earlier redesign image is superseded by the lifecycle revision. Two final image
+build attempts reached locked dependency installation but timed out downloading
+unchanged packages from `files.pythonhosted.org`. Final container build and smoke
+verification remain pending network recovery.
+The latest Black check reported all 39 files unchanged but exited at the mandatory
+30-second cap; it was not retried. A completed Black check and the paid model smoke
+remain pending.
 
 Verification: 23 deterministic tests passed, including the actual SDK loop with
 synthetic provider responses, invalid tool arguments, unread citations,

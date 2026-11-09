@@ -23,7 +23,7 @@ def test_inner_layers_only_import_allowed_dependencies(layer: str) -> None:
 
     allowed = {"pydantic"}
     allowed.update(sys.stdlib_module_names)
-    for path in (ROOT / "src/support_desk" / layer).glob("*.py"):
+    for path in (ROOT / "src/support_desk" / layer).rglob("*.py"):
         for node in ast.walk(ast.parse(path.read_text())):
             modules: list[str] = []
             if isinstance(node, ast.Import):

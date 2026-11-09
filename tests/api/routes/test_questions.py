@@ -8,7 +8,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from support_desk.api import create_app
-from support_desk.application import AnswerQuestion, GenerationBusy, QuestionRequest
+from support_desk.api.schemas import AnswerRequest
+from support_desk.application import AnswerService, GenerationBusy
 from support_desk.domain import AnswerDraft
 
 
@@ -22,11 +23,10 @@ def test_returns_unreviewed_draft(draft: AnswerDraft) -> None:
 
     generator = AsyncMock()
     generator.generate.return_value = draft
-    with TestClient(create_app(AnswerQuestion(generator))) as client:
+    with TestClient(create_app(AnswerService(generator))) as client:
         response = client.post("/questions", json={"question": " How many boards? "})
         assert response.status_code == 200
         assert response.json() == draft.model_dump(mode="json")
-        assert client.get("/health/ready").status_code == 200
     generator.generate.assert_awaited_once_with("How many boards?")
 
 
@@ -40,7 +40,7 @@ def test_rejects_invalid_question(question: str) -> None:
     """
 
     generator = AsyncMock()
-    with TestClient(create_app(AnswerQuestion(generator))) as client:
+    with TestClient(create_app(AnswerService(generator))) as client:
         assert client.post("/questions", json={"question": question}).status_code == 422
     generator.generate.assert_not_awaited()
 
@@ -49,7 +49,12 @@ def test_bounds_body_and_rejects_unknown_fields() -> None:
     """Reject excessive JSON and undeclared request fields."""
 
     with TestClient(create_app()) as client:
-        assert client.post("/questions", content=b"x" * 16385).status_code == 413
+        response = client.post("/questions", content=b"x" * 16385)
+        assert response.status_code == 413
+        assert response.json() == {
+            "code": "request_too_large",
+            "message": "Request body exceeds 16384 bytes.",
+        }
         assert (
             client.post(
                 "/questions", json={"question": "Hi", "model": "other"}
@@ -58,13 +63,31 @@ def test_bounds_body_and_rejects_unknown_fields() -> None:
         )
 
 
-def test_unconfigured_api_is_live_but_unready() -> None:
-    """Expose configuration failure without requiring provider access."""
+def test_unconfigured_api_rejects_generation() -> None:
+    """Expose unavailable generation without requiring provider access."""
 
     with TestClient(create_app()) as client:
-        assert client.get("/health/live").status_code == 200
-        assert client.get("/health/ready").status_code == 503
-        assert client.post("/questions", json={"question": "Hi"}).status_code == 503
+        question = client.post("/questions", json={"question": "Hi"})
+        assert question.status_code == 503
+        assert question.json() == {
+            "code": "generation_unavailable",
+            "message": "Generation is not configured.",
+        }
+
+
+def test_reports_busy_generation_with_retry_guidance() -> None:
+    """Return a stable busy response and retry delay."""
+
+    service = AsyncMock(spec=AnswerService)
+    service.execute.side_effect = GenerationBusy
+    with TestClient(create_app(service)) as client:
+        response = client.post("/questions", json={"question": "Hi"})
+    assert response.status_code == 429
+    assert response.headers["Retry-After"] == "5"
+    assert response.json() == {
+        "code": "generation_busy",
+        "message": "Generation is busy; please try again later.",
+    }
 
 
 @pytest.mark.parametrize(
@@ -83,9 +106,13 @@ def test_sanitizes_generation_failures(failure: Exception, status: int) -> None:
 
     generator = AsyncMock()
     generator.generate.side_effect = failure
-    with TestClient(create_app(AnswerQuestion(generator))) as client:
+    with TestClient(create_app(AnswerService(generator))) as client:
         response = client.post("/questions", json={"question": "Hi"})
         assert response.status_code == status
+        assert response.json()["code"] in {
+            "generation_failed",
+            "generation_timed_out",
+        }
         assert "secret-provider-detail" not in response.text
 
 
@@ -101,7 +128,7 @@ def test_deadline_releases_generation_slot(draft: AnswerDraft) -> None:
 
     generator.generate.side_effect = partial(_slow_generate, draft)
     with TestClient(
-        create_app(AnswerQuestion(generator, timeout_seconds=0.01))
+        create_app(AnswerService(generator, timeout_seconds=0.01))
     ) as client:
         assert client.post("/questions", json={"question": "Hi"}).status_code == 504
         generator.generate.side_effect = None
@@ -109,7 +136,8 @@ def test_deadline_releases_generation_slot(draft: AnswerDraft) -> None:
         assert client.post("/questions", json={"question": "Hi"}).status_code == 200
 
 
-def test_rejects_concurrent_generation(draft: AnswerDraft) -> None:
+@pytest.mark.asyncio
+async def test_rejects_concurrent_generation(draft: AnswerDraft) -> None:
     """Reject an overlapping call and restore admission after cancellation.
 
     Args:
@@ -117,7 +145,22 @@ def test_rejects_concurrent_generation(draft: AnswerDraft) -> None:
             Valid authored draft fixture.
     """
 
-    asyncio.run(_exercise_concurrent_generation(draft))
+    started = asyncio.Event()
+
+    generator = AsyncMock()
+    generator.generate.side_effect = partial(_blocking_generate, started, draft)
+    service = AnswerService(generator)
+    request = AnswerRequest(question="Hi")
+    task = asyncio.create_task(service.execute(request.question))
+    await started.wait()
+    with pytest.raises(GenerationBusy):
+        await service.execute(request.question)
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    generator.generate.side_effect = None
+    generator.generate.return_value = draft
+    assert await service.execute(request.question) == draft
 
 
 async def _slow_generate(draft: AnswerDraft, question: str) -> AnswerDraft:
@@ -135,32 +178,6 @@ async def _slow_generate(draft: AnswerDraft, question: str) -> AnswerDraft:
 
     await asyncio.sleep(1)
     return draft
-
-
-async def _exercise_concurrent_generation(draft: AnswerDraft) -> None:
-    """Coordinate two calls against the single admission slot.
-
-    Args:
-        draft:
-            Valid authored draft fixture.
-    """
-
-    started = asyncio.Event()
-
-    generator = AsyncMock()
-    generator.generate.side_effect = partial(_blocking_generate, started, draft)
-    service = AnswerQuestion(generator)
-    request = QuestionRequest(question="Hi")
-    task = asyncio.create_task(service.execute(request))
-    await started.wait()
-    with pytest.raises(GenerationBusy):
-        await service.execute(request)
-    task.cancel()
-    with pytest.raises(asyncio.CancelledError):
-        await task
-    generator.generate.side_effect = None
-    generator.generate.return_value = draft
-    assert await service.execute(request) == draft
 
 
 async def _blocking_generate(

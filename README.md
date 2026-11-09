@@ -47,11 +47,13 @@ planned production stack are recorded in [DESIGN.md](DESIGN.md).
 
 ## Technology
 
-FastAPI, Pydantic, Uvicorn, OpenAI Agents SDK, and the OpenAI client implement the
-current API. Python 3.12 and uv manage the package and locked dependencies. Black and isort
-format code; Ruff checks lint, annotations, and Google-style docstrings; mypy checks
-types in strict mode; pytest runs deterministic tests. GitHub Actions configures
-independent checks for pull requests and pushes to `master`.
+FastAPI, Starlette, Pydantic, Uvicorn, OpenAI Agents SDK, and the OpenAI client
+implement the current API. Starlette supplies ASGI types and response primitives for
+the bounded request middleware. Python 3.12 and uv manage the package and locked
+dependencies. Black and isort format code; Ruff checks lint, annotations, and
+Google-style docstrings; mypy checks types in strict mode; pytest and pytest-asyncio
+run deterministic tests. GitHub Actions configures independent checks for pull
+requests and pushes to `master`.
 
 ## Quick start
 
@@ -84,13 +86,15 @@ configuration only; it does not contact OpenAI or verify model access.
 
 | Environment variable | Behavior |
 | --- | --- |
-| `SUPPORT_DESK_ENABLE_INFERENCE` | Set exactly `1` to permit paid generation; disabled by default |
+| `SUPPORT_DESK_ENABLE_INFERENCE` | Set exactly `1` to permit paid generation; unset or `0` disables it |
 | `SUPPORT_DESK_MODEL` | Explicit OpenAI Responses model ID; no default |
 | `OPENAI_API_KEY` | Provider credential, required when enabling inference |
 
 Do not enable inference until a model and run budget are agreed. Export credentials
 through your shell's secret mechanism; keep them out of source and command history.
-After approval, set the variables and restart the same API command. A request is:
+After approval, set the variables and restart the same API command. Invalid enablement
+values and enabled inference without both other settings fail during process startup.
+A request is:
 
 ```bash
 curl --fail-with-body http://127.0.0.1:8000/questions -H 'Content-Type: application/json' -d '{"question":"How many boards can a Free workspace have?"}'
@@ -103,7 +107,9 @@ up to three model calls. Limits are source constants: 2,048 question characters,
 output tokens per model turn (up to 3,072 total). Provider retries are disabled;
 failures require explicit retry. These bound a request, not cumulative spending.
 Cancellation cannot guarantee that remote inference stops or incurs no charge.
-HTTP 429 means busy, 502 means generation failed, and 504 means deadline exceeded.
+API failures contain stable `code` and safe `message` fields. HTTP 413 means the
+request is too large, 429 means busy, 502 means generation failed, 503 means generation
+is unavailable, and 504 means the deadline was exceeded.
 
 Use one worker and localhost: the admission slot is process-local, and this increment
 has no operator authentication. Shared hosting/access controls arrive in Slice 1.3.
