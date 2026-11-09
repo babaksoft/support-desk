@@ -28,11 +28,7 @@ class UiSettings(BaseModel):
         """
 
         return cls.model_validate(
-            {
-                "api_url": os.environ.get(
-                    "SUPPORT_DESK_API_URL", "http://127.0.0.1:8000"
-                )
-            }
+            {"api_url": os.environ.get("SUPPORT_DESK_API_URL", "http://127.0.0.1:8000")}
         )
 
 
