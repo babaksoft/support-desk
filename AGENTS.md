@@ -150,6 +150,14 @@ and export destinations explicit. Avoid request IDs or customer identifiers as
 metric labels. Enforce application authorization and tool permissions outside LLM
 instructions; guardrails are an additional check, not an authorization boundary.
 
+Local paid smoke tests load `.env.smoke` explicitly. Never read, print, search,
+summarize, copy, or expose the contents of `.env*` files except `.env.example`.
+You may check a secret file's existence, permissions, and Git ignore status without
+reading it. Do not print the process environment, enable shell tracing, or enable
+HTTP header/body debugging around secrets. If secret-like content appears in tool
+output, stop immediately, do not repeat it, warn that the credential must be treated
+as compromised, and wait for revocation and replacement.
+
 GitHub Actions must cover pull requests as well as the `master` branch. Use GitHub
 OIDC for AWS deployment, immutable image identities, health checks, a smoke test,
 and a documented rollback. Specify durable cloud storage separately from local

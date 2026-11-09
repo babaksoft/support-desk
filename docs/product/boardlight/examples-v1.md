@@ -3,7 +3,8 @@
 Evidence pack: `boardlight-v1`; all source references below use version `1`.
 These authored expectations seed later deterministic tests and model evaluations.
 Review factual coverage and missing information rather than exact answer wording.
-No model or judge has been run against these examples.
+The Q08 refund case was used in the Slice 1.1 live smoke; the remaining examples
+have not been run as a model evaluation, and no judge has been used.
 
 ## Q01: Plan capacity
 

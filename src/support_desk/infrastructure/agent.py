@@ -1,5 +1,7 @@
 """Generate structured drafts through the OpenAI Agents SDK tool loop."""
 
+from dataclasses import dataclass
+
 from agents import (
     Agent,
     ModelSettings,
@@ -29,6 +31,42 @@ Never invent prices, refunds, account facts, or a diagnosis. Do not ask for pass
 payment details, or access links. Keep the draft concise; review_status is unreviewed.
 You have at most {MAX_LOOKUP_CALLS} tool calls and {MAX_MODEL_TURNS} model turns.
 """
+
+
+@dataclass(frozen=True)
+class GenerationDiagnostics:
+    """Record sanitized operational evidence from one agent run.
+
+    Attributes:
+        draft:
+            Validated answer produced by the run.
+        model_calls:
+            Number of provider model calls.
+        input_tokens:
+            Total input tokens across model calls.
+        cached_input_tokens:
+            Input tokens served from the provider cache.
+        output_tokens:
+            Total output tokens, including reasoning tokens.
+        reasoning_tokens:
+            Reasoning tokens included in the output total.
+        response_ids:
+            Provider response identifiers for audit lookup.
+        source_ids:
+            Sources returned by the bounded lookup tool.
+        lookup_calls:
+            Number of accepted lookup tool calls.
+    """
+
+    draft: AnswerDraft
+    model_calls: int
+    input_tokens: int
+    cached_input_tokens: int
+    output_tokens: int
+    reasoning_tokens: int
+    response_ids: tuple[str, ...]
+    source_ids: tuple[SourceId, ...]
+    lookup_calls: int
 
 
 @function_tool(failure_error_function=None)
@@ -93,6 +131,25 @@ class AgentsAnswerGenerator:
                 The output cites unread evidence or skips evidence lookup.
         """
 
+        diagnostics = await self.generate_with_diagnostics(question)
+
+        return diagnostics.draft
+
+    async def generate_with_diagnostics(self, question: str) -> GenerationDiagnostics:
+        """Run the bounded tool loop and return sanitized usage evidence.
+
+        Args:
+            question:
+                Operator-authored product question.
+
+        Returns:
+            Validated draft and provider/tool usage diagnostics.
+
+        Raises:
+            ValueError:
+                The output cites unread evidence or skips evidence lookup.
+        """
+
         lookup = ReferenceLookup()
 
         result = await Runner.run(
@@ -111,4 +168,30 @@ class AgentsAnswerGenerator:
         ):
             raise ValueError("Draft must cite evidence returned by the lookup tool.")
 
-        return draft
+        return GenerationDiagnostics(
+            draft=draft,
+            model_calls=sum(
+                response.usage.requests for response in result.raw_responses
+            ),
+            input_tokens=sum(
+                response.usage.input_tokens for response in result.raw_responses
+            ),
+            cached_input_tokens=sum(
+                response.usage.input_tokens_details.cached_tokens
+                for response in result.raw_responses
+            ),
+            output_tokens=sum(
+                response.usage.output_tokens for response in result.raw_responses
+            ),
+            reasoning_tokens=sum(
+                response.usage.output_tokens_details.reasoning_tokens
+                for response in result.raw_responses
+            ),
+            response_ids=tuple(
+                response.response_id
+                for response in result.raw_responses
+                if response.response_id is not None
+            ),
+            source_ids=tuple(sorted(returned_source_ids)),
+            lookup_calls=lookup.calls,
+        )

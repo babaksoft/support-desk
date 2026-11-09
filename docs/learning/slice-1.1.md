@@ -42,3 +42,24 @@ Implementation was checked against installed signatures and official
 [quickstart](https://developers.openai.com/api/docs/guides/agents/quickstart?lang=python),
 [running agents](https://developers.openai.com/api/docs/guides/agents/running-agents),
 and [tracing controls](https://developers.openai.com/api/docs/guides/agents/integrations-observability).
+The final deterministic suite, static checks, capped formatter check, package builds,
+and a non-root container smoke passed on 2026-11-09. No provider credential was
+available during that verification.
+
+The first paid smoke later made two non-retried attempts. One failed with a provider
+connection error; the other reached live provider/tool diagnostics but failed a
+postcondition. Because the initial runner emitted evidence only after postconditions,
+the completed case's draft and usage were lost. The runner now flushes sanitized
+case evidence first, with a deterministic regression test for that failure path.
+This demonstrates why experiment harness behavior needs its own failure-path review:
+bounded execution alone does not guarantee recoverable evidence.
+
+The approved follow-up completed both authored cases with four model calls, 3,959
+input tokens, 243 output tokens, and estimated standard cost USD 0.00406275 against
+a USD 0.10 budget. Board capacity returned the expected `BL-PLANS` answer. Refund
+policy safely returned `insufficient_evidence` and invented no policy, but cited
+`BL-PLANS` and `BL-UPGRADES` rather than returning no evidence. Human review accepts
+the evidence-gap behavior while retaining the citation mismatch as a semantic
+grounding failure for the evaluation baseline. The structural contract ensures
+citations were read; it still does not establish that each citation logically
+supports the claim or that the inspected pack is exhaustive.

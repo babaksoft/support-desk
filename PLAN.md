@@ -6,11 +6,13 @@ The product scope and six-stage progression are agreed. Repository preparation i
 done: the initial commit is pushed and `origin` points to the GitHub repository
 of the same name. The Stage 1 plan is reviewed and approved, subject to further
 review questions. Its work is divided into smaller review units below. Slice 1.1
-local API implementation is verified; paid model smoke and completed formatting
-verification remain pending. Deployment has not started. Preparation A is done; the user reports
-all GitHub CI checks passed. Preparation B is done: Boardlight's initial reference
-pack and example questions are authored and checked. Plan implementation one stage
-at a time and update status only with verification evidence.
+is done: local API implementation, formatting, deterministic checks, container
+smoke, and bounded live inference are verified. The paid smoke recorded one safe
+but semantically imperfect citation result for the later evaluation baseline.
+Deployment has not started. Preparation A is done; the user reports all GitHub CI
+checks passed. Preparation B is done: Boardlight's initial reference pack and
+example questions are authored and checked. Plan implementation one stage at a
+time and update status only with verification evidence.
 
 Primary learning: AI Engineering foundations, agent frameworks, evaluation,
 observability, LLMOps, and DevOps. Full-stack infrastructure is supporting work.

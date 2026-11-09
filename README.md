@@ -7,8 +7,9 @@ learning focus is AI Engineering, LLMOps, and DevOps.
 The local FastAPI increment drafts product guidance through an OpenAI Agents SDK
 reference-lookup tool and returns an unreviewed answer with versioned evidence or
 an explicit evidence gap. Deterministic tests exercise the API and real SDK loop
-with synthetic provider responses. Live model behavior awaits a budgeted smoke run;
-there is no configured cloud deployment.
+with synthetic provider responses. A bounded paid smoke verified live inference,
+including one recorded semantic citation limitation. The local non-root container
+and health behavior are verified, but there is no configured cloud deployment.
 
 ## Capabilities
 
@@ -110,6 +111,35 @@ Cancellation cannot guarantee that remote inference stops or incurs no charge.
 API failures contain stable `code` and safe `message` fields. HTTP 413 means the
 request is too large, 429 means busy, 502 means generation failed, 503 means generation
 is unavailable, and 504 means the deadline was exceeded.
+
+### Paid model smoke
+
+**Networked, billable, data-sharing:** the Slice 1.1 smoke sends two authored
+questions and selected Boardlight evidence to OpenAI. It uses the pinned
+`gpt-5.4-mini-2026-03-17` snapshot, disables SDK tracing and provider storage,
+permits at most six model calls and 6,144 output tokens, and has no automatic
+retries. The completed follow-up experiment budget was USD 0.10.
+
+Create the ignored, mode-`600` `.env.smoke` file outside Codex output with the three
+configuration variables above. Do not add automatic dotenv loading to application
+startup. Run the fixed experiment explicitly:
+
+```bash
+uv run --env-file .env.smoke python -m support_desk.composition.model_smoke
+```
+
+The command emits sanitized JSON Lines containing each completed case before its
+postconditions, followed by the aggregate report. Records include drafts,
+tool/source behavior, response IDs, token usage, latency, and estimated standard
+token cost. It never emits the credential. Each execution is a new paid experiment
+and requires an agreed budget.
+
+The recorded follow-up used four model calls, 3,959 input tokens, and 243 output
+tokens, with estimated standard token cost USD 0.00406275. Board capacity passed
+the authored evidence expectation. Refund policy safely returned insufficient
+evidence but cited the plan and upgrade sources it inspected; those citations do
+not prove that no separate refund policy exists. This limitation is retained for
+the evaluation baseline.
 
 Use one worker and localhost: the admission slot is process-local, and this increment
 has no operator authentication. Shared hosting/access controls arrive in Slice 1.3.

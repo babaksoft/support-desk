@@ -1,9 +1,10 @@
 # Stage 1: Walking Skeleton
 
 Status: reviewed and approved, subject to further review questions. Repository
-preparation and units A/B are done. Slice 1.1 resumed for a focused design revision;
-its prior verification is superseded until the revised implementation is checked.
-The paid model smoke run and completed Black check also remain pending. Verification
+preparation and units A/B are done. Slice 1.1 implementation and deterministic
+verification are done. The paid follow-up verified live inference and captured one
+semantic citation limitation for the later evaluation baseline. The user completed
+Black manually and fixed one formatting issue. Slice 1.1 is done. Verification
 evidence is recorded below. The breakdown below makes review units smaller while
 preserving the approved outcome and release gate.
 
@@ -115,39 +116,36 @@ declared Starlette directly, added an API-owned generic lifespan, and registered
 OpenAI client only for enabled inference. Composition settings are immutable Pydantic
 values, direct asynchronous tests use pytest-asyncio, stable agent configuration is
 reused, executable limits are centralized, and architecture checks are recursive.
-Focused verification was added for these contracts. The original verification
-record below remains as historical context; the revision verification supersedes it.
+Focused verification was added for these contracts. The final evidence below
+supersedes the earlier verification runs.
 
-Revision verification: 41 deterministic tests passed outside the restricted sandbox,
-including API contracts, composition, body-stream replay, domain and application
-invariants, generic resource lifecycle, architecture rules, and the synthetic-provider
-SDK loop. Ruff, strict mypy, isort, lock consistency, `git diff --check`, OpenAPI
-generation, and source/wheel builds passed. The wheel contains both route modules
-and all four evidence documents.
-The earlier redesign image is superseded by the lifecycle revision. Two final image
-build attempts reached locked dependency installation but timed out downloading
-unchanged packages from `files.pythonhosted.org`. Final container build and smoke
-verification remain pending network recovery.
-The latest Black check reported all 39 files unchanged but exited at the mandatory
-30-second cap; it was not retried. A completed Black check and the paid model smoke
-remain pending.
+Final local verification (2026-11-09): the capped Black check completed with all
+40 files unchanged. isort, Ruff, strict mypy, lock consistency, OpenAPI generation,
+source/wheel builds, `git diff --check`, and 41 deterministic tests passed. The
+tests cover API contracts, composition, body-stream replay, domain and application
+invariants, generic resource lifecycle, architecture rules, and the actual Agents
+SDK loop with synthetic provider responses. The suite passed outside the restricted
+sandbox, where its first asynchronous HTTP test stalls.
 
-Verification: 23 deterministic tests passed, including the actual SDK loop with
-synthetic provider responses, invalid tool arguments, unread citations,
-insufficient-evidence output, request bounds, deadline/cancellation, concurrency,
-inner-layer dependencies, and evidence parity. Tests passed outside the execution
-sandbox; the restricted environment stalled in thread/event-loop execution.
-isort, Ruff, strict mypy, lock consistency, source/wheel builds, relative links,
-and `git diff --check` passed. The wheel includes all four reference documents.
-The non-root Docker image built; its server, liveness, unconfigured readiness,
-and packaged lookup passed a smoke check with external networking disabled.
-Black reformatted nine files and reported completion, then exited 124 at the
-30-second cap; it was not retried. A completed CI formatting check remains pending.
+The current non-root image built as
+`sha256:682a945b758c550e055e97c9bc365393c1b9b29805a7b3935c0e6878e965bad2`.
+Its Docker health check, liveness endpoint, unconfigured readiness and question
+responses, runtime UID 10001, packaged evidence, and paid-smoke module passed a
+local smoke check. The wheel contains both route modules, the smoke runner, and all
+four evidence documents.
 
-Paid smoke proposal (not executed or approved): use
+Follow-up local verification (2026-11-09): after adding sanitized provider usage
+diagnostics and the fixed paid-smoke runner, 43 deterministic tests, isort, Ruff,
+strict mypy, and `git diff --check` passed. Black reformatted the two new modules
+but exited at the mandatory 30-second cap, so it was not retried and remains
+incomplete for that invocation. The user subsequently completed Black manually and
+reported that it fixed one formatting issue. Lock consistency, OpenAPI generation,
+source/wheel builds, and the rebuilt container smoke also passed.
+
+The approved paid smoke used
 `gpt-5.4-mini-2026-03-17` for exactly two authored questions: Free board capacity
 (expect `BL-PLANS` v1) and refund policy (expect insufficient evidence).
-Proposed total experiment budget: USD 0.25; at most six model calls and 6,144
+The total experiment budget was USD 0.25; at most six model calls and 6,144
 output tokens across both attempts, with no automatic retries. Stop after the two
 attempts, including failures; further attempts need a new agreed budget. This is
 an experiment budget, not an account-level spending control. The
@@ -155,9 +153,42 @@ an experiment budget, not an account-level spending control. The
 lists Responses, function calling, and structured outputs, with standard input/
 output prices of USD 0.75/4.50 per million tokens as checked on 2026-11-08.
 Only authored questions and product evidence go to OpenAI; SDK tracing stays off.
-Record model access, actual call/tool behavior, draft review, usage, and estimated
-cost after approval. Live inference compatibility and grounding remain unverified;
-Slice 1.1 is not complete until that evidence and formatting verification exist.
+
+Smoke execution (2026-11-09): `.env.smoke` passed existence, mode-`600`, and Git
+ignore checks without its contents being read. The board-capacity attempt failed
+with `APIConnectionError` and was not retried. Separate unauthenticated curl and
+synthetic-key SDK checks then confirmed general OpenAI connectivity. The remaining
+refund-policy attempt completed far enough to build live provider/tool diagnostics,
+then failed a runner postcondition with `RuntimeError`. The runner emitted results
+only after postconditions, so its draft, response IDs, usage, and cost were lost.
+No secret appeared in output, and no further paid attempt was made.
+
+The runner now flushes each sanitized case record before validating postconditions
+and supports selecting one remaining authored case without retrying earlier work.
+A regression test verifies that a completed case remains recoverable when a
+postcondition fails.
+
+Paid follow-up (2026-11-09): the approved USD 0.10 experiment ran each authored
+case once with no retries. Both used one lookup and two model calls. Board capacity
+returned `answered`, cited and read only `BL-PLANS`, and passed human review and all
+postconditions. It used 1,801 input and 74 output tokens in 7.983 seconds, for an
+estimated USD 0.00168375.
+
+Refund policy returned `insufficient_evidence`, invented no eligibility or refund
+rule, and appropriately requested authoritative clarification. It read and cited
+`BL-PLANS` and `BL-UPGRADES`, rather than the authored expectation of no evidence,
+so the strict postcondition failed. Human review accepts the safe evidence-gap
+answer but records a semantic citation limitation: those sources show what the
+agent inspected but do not prove that no refund policy exists. It used 2,158 input
+and 169 output tokens in 3.872 seconds, for an estimated USD 0.00237900.
+
+The follow-up totaled four model calls, 3,959 input tokens, no cached input, 243
+output tokens, no reported reasoning tokens, and estimated cost USD 0.00406275.
+SDK tracing remained disabled, Responses storage was false, and no credential
+appeared in output. Live SDK/tool compatibility, bounded execution, structural
+grounding, usage capture, and safe insufficient-evidence behavior are verified.
+The semantic citation mismatch becomes a baseline case for Slice 1.8 rather than
+being hidden or treated as proof of grounding quality. Slice 1.1 is complete.
 
 ## Slice 1.2: Ask a question through Streamlit
 
