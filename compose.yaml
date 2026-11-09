@@ -1,0 +1,36 @@
+services:
+  api:
+    build: .
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      SUPPORT_DESK_ENABLE_INFERENCE: ${SUPPORT_DESK_ENABLE_INFERENCE:-0}
+      SUPPORT_DESK_MODEL: ${SUPPORT_DESK_MODEL:-}
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  ui:
+    build: .
+    command:
+      - /app/.venv/bin/streamlit
+      - run
+      - /app/src/support_desk/composition/ui.py
+      - --server.address=0.0.0.0
+      - --server.port=8501
+      - --server.headless=true
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      SUPPORT_DESK_API_URL: http://api:8000
+    healthcheck:
+      test:
+        - CMD
+        - /app/.venv/bin/python
+        - -c
+        - "from urllib.request import urlopen; urlopen('http://127.0.0.1:8501/_stcore/health', timeout=2)"
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    ports:
+      - "127.0.0.1:8501:8501"

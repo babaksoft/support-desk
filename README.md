@@ -4,17 +4,18 @@ Support Desk is a Python learning project for building and operating a small,
 evidence-based support application for one fictional SaaS product. Its primary
 learning focus is AI Engineering, LLMOps, and DevOps.
 
-The local FastAPI increment drafts product guidance through an OpenAI Agents SDK
-reference-lookup tool and returns an unreviewed answer with versioned evidence or
-an explicit evidence gap. Deterministic tests exercise the API and real SDK loop
-with synthetic provider responses. A bounded paid smoke verified live inference,
-including one recorded semantic citation limitation. The local non-root container
-and health behavior are verified, but there is no configured cloud deployment.
+The local Streamlit interface sends product questions to FastAPI, which drafts
+guidance through an OpenAI Agents SDK reference-lookup tool. It displays an
+unreviewed answer with versioned evidence or an explicit evidence gap. Deterministic
+tests exercise the UI, API, and real SDK loop with synthetic provider responses. A
+bounded paid smoke verified live inference, including one recorded semantic citation
+limitation. There is no configured cloud deployment.
 
 ## Capabilities
 
 - `POST /questions`: bounded question generation with structured drafts and citations.
 - `GET /health/live`: process liveness; `GET /health/ready`: local configuration readiness.
+- Streamlit question form with draft, evidence, and safe failure displays.
 - Packaged Boardlight v1 evidence, also included in the wheel and container.
 
 ## Product scope
@@ -27,7 +28,7 @@ Support Desk has four intended use cases: answer a product question,
 investigate an account issue, review and resolve a case, and propose a knowledge
 improvement. Support responses and knowledge proposals require operator review.
 This increment covers general product guidance using authored documentation.
-Account tools, Streamlit, persistence, and case workflows remain planned.
+Account tools, persistence, and case workflows remain planned.
 
 ## Data and cloud usage
 
@@ -43,18 +44,19 @@ Use authored questions only. Local telemetry does not imply local inference.
 
 The intended architecture is a modular monolith with domain values, application
 use cases, and infrastructure adapters. FastAPI serves the application boundary;
-Streamlit is the planned operator interface. Framework responsibilities and the
-planned production stack are recorded in [DESIGN.md](DESIGN.md).
+the Streamlit operator interface calls it through a typed HTTP client. Framework
+responsibilities and the planned production stack are recorded in [DESIGN.md](DESIGN.md).
 
 ## Technology
 
-FastAPI, Starlette, Pydantic, Uvicorn, OpenAI Agents SDK, and the OpenAI client
-implement the current API. Starlette supplies ASGI types and response primitives for
-the bounded request middleware. Python 3.12 and uv manage the package and locked
-dependencies. Black and isort format code; Ruff checks lint, annotations, and
-Google-style docstrings; mypy checks types in strict mode; pytest and pytest-asyncio
-run deterministic tests. GitHub Actions configures independent checks for pull
-requests and pushes to `master`.
+Streamlit and HTTPX implement the operator client. FastAPI, Starlette, Pydantic,
+Uvicorn, OpenAI Agents SDK, and the OpenAI client implement the current API.
+Starlette supplies ASGI types and response primitives for the bounded request
+middleware. Python 3.12 and uv manage the package and locked dependencies. Black
+and isort format code; Ruff checks lint, annotations, and Google-style docstrings;
+mypy checks types in strict mode; pytest, pytest-asyncio, and Streamlit AppTest run
+deterministic tests. GitHub Actions configures independent checks for pull requests
+and pushes to `master`.
 
 ## Quick start
 
@@ -83,6 +85,16 @@ Open `http://127.0.0.1:8000/docs` for the contract. In the default configuration
 liveness succeeds and readiness/question generation return 503. Readiness checks
 configuration only; it does not contact OpenAI or verify model access.
 
+In another terminal, start the operator interface:
+
+```bash
+uv run streamlit run src/support_desk/composition/ui.py --server.address 127.0.0.1 --server.port 8501
+```
+
+Open `http://127.0.0.1:8501`. The default API remains inference-disabled, so a
+submitted question shows the safe configuration failure until inference is
+explicitly enabled.
+
 ## Configuration
 
 | Environment variable | Behavior |
@@ -90,6 +102,7 @@ configuration only; it does not contact OpenAI or verify model access.
 | `SUPPORT_DESK_ENABLE_INFERENCE` | Set exactly `1` to permit paid generation; unset or `0` disables it |
 | `SUPPORT_DESK_MODEL` | Explicit OpenAI Responses model ID; no default |
 | `OPENAI_API_KEY` | Provider credential, required when enabling inference |
+| `SUPPORT_DESK_API_URL` | Streamlit API root; defaults to `http://127.0.0.1:8000` |
 
 Do not enable inference until a model and run budget are agreed. Export credentials
 through your shell's secret mechanism; keep them out of source and command history.
@@ -144,18 +157,23 @@ the evaluation baseline.
 Use one worker and localhost: the admission slot is process-local, and this increment
 has no operator authentication. Shared hosting/access controls arrive in Slice 1.3.
 
-## Container
+## Local Compose
 
 **Networked build:** downloads base images and locked dependencies.
 
 ```bash
-docker build -t support-desk:slice-1.1 .
-docker run --rm -p 127.0.0.1:8000:8000 support-desk:slice-1.1
+SUPPORT_DESK_ENABLE_INFERENCE=0 SUPPORT_DESK_MODEL= OPENAI_API_KEY= docker compose --env-file /dev/null up --build
 ```
 
-The container runs as a non-root user, starts one worker, and checks liveness.
-It starts with inference disabled. No database or volume is needed. Remove the
-local image with `docker image rm support-desk:slice-1.1` when finished.
+Compose starts the non-root API on `127.0.0.1:8000`, waits for its liveness check,
+and then starts Streamlit on `127.0.0.1:8501`. Both services have health checks.
+This command explicitly disables inference and ignores local dotenv files. No
+database or volume is needed. Stop the services with `docker compose down`.
+
+**Networked, billable, data-sharing:** after agreeing a new run budget, the same
+stack can load the ignored mode-`600` smoke settings explicitly with
+`docker compose --env-file .env.smoke up --build`. Each submitted question is a
+new paid attempt under the limits described above.
 
 ## Database management
 

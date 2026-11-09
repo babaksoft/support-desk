@@ -9,3 +9,4 @@ Code walkthroughs can stay in discussion unless they establish durable design
 knowledge. This directory is not a requirement to write an essay for every change.
 
 - [Slice 1.1: bounded evidence and the agent tool loop](slice-1.1.md)
+- [Slice 1.2: typed UI-to-API boundary](slice-1.2.md)

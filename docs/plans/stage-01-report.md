@@ -1,3 +1,5 @@
+# Stage 1: Coding session reports and summaries
+
 ## Slice 1.1
 
 Implementation record (2026-11-08): added the typed question/draft boundaries,
@@ -90,3 +92,37 @@ appeared in output. Live SDK/tool compatibility, bounded execution, structural
 grounding, usage capture, and safe insufficient-evidence behavior are verified.
 The semantic citation mismatch becomes a baseline case for Slice 1.8 rather than
 being hidden or treated as proof of grounding quality. Slice 1.1 is complete.
+
+## Slice 1.2
+
+Implementation record (2026-11-09): added a Streamlit question form,
+draft/evidence display, explicit unreviewed labeling, and
+safe empty-input, API, transport, and invalid-contract failures. A typed HTTP client
+validates requests and parses FastAPI results into the existing domain draft. The UI
+imports no repository or agent adapter. Added locked Streamlit/HTTPX runtime
+dependencies and two-service local Compose orchestration with API-startup ordering
+and health checks.
+
+Verification record (2026-11-09): Streamlit AppTest followed the authored Free-board
+question through the form and verified the draft and `BL-PLANS` evidence display.
+Client tests covered valid results, declared API errors, transport failure, and
+invalid response payloads. All 55 deterministic tests passed outside the restricted
+sandbox, where the existing asynchronous HTTP test stalls. isort, Ruff, strict
+mypy, lock consistency, Compose configuration, source/wheel builds, and
+`git diff --check` passed. The capped Black formatting run reformatted one file and
+reached the 30-second boundary, so Black remains incomplete and was not retried.
+
+Local Uvicorn and Streamlit entry points started successfully; API liveness and the
+Streamlit health endpoint passed. Submitting the authored question to the deliberately
+inference-disabled API returned the safe `generation_unavailable` contract. No model
+call was made. The Compose image build remains incomplete because Docker Hub returned
+HTTP 403 while resolving `python:3.12-slim`, before project code ran. A browser review
+screenshot is also outstanding because no browser capture tool was available. Do not
+mark Slice 1.2 complete until the two-service Compose journey and screenshot are
+recorded.
+
+Learning hypothesis: a typed HTTP boundary should let Streamlit distinguish safe
+application failures from transport and contract failures without depending on
+repositories or agent internals. Deterministic evidence supports that separation;
+the remaining browser and Compose checks concern delivery behavior, not the boundary
+contract. See the [learning record](../learning/slice-1.2.md).

@@ -109,6 +109,8 @@ container and health/readiness checks for this API increment.
 
 ## Slice 1.2: Ask a question through Streamlit
 
+**Status: Implementation complete; verification incomplete**
+
 Add the question form, draft/evidence display, and useful failure messages.
 Streamlit calls FastAPI through typed interfaces. Add local Compose orchestration
 and verify the UI-to-API journey.

@@ -45,3 +45,24 @@ def test_packaged_sources_match_authored_reference_pack() -> None:
         authored = ROOT / "docs/product/boardlight/v1" / filename
         packaged = ROOT / "src/support_desk/infrastructure/evidence" / filename
         assert packaged.read_bytes() == authored.read_bytes()
+
+
+def test_ui_only_imports_http_and_domain_boundaries() -> None:
+    """Keep repositories, services, and agent adapters out of Streamlit."""
+
+    allowed = (
+        "support_desk.api.schemas",
+        "support_desk.domain",
+        "support_desk.ui",
+    )
+    for path in (ROOT / "src/support_desk/ui").rglob("*.py"):
+        for node in ast.walk(ast.parse(path.read_text())):
+            if isinstance(node, ast.Import):
+                modules = [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                modules = [node.module or ""]
+            else:
+                continue
+            for module in modules:
+                if module.startswith("support_desk"):
+                    assert module.startswith(allowed), (path, module)
