@@ -158,6 +158,13 @@ HTTP header/body debugging around secrets. If secret-like content appears in too
 output, stop immediately, do not repeat it, warn that the credential must be treated
 as compromised, and wait for revocation and replacement.
 
+Reuse downloaded browser tooling for UI screenshots across implementation units.
+Keep browser binaries in `.local/playwright-browsers/` and reusable browser-helper
+images in the local container cache; both are local verification tooling, not product
+dependencies or committed artifacts. Check these caches before downloading. Do not
+remove them after a verification run unless the user requests cleanup or storage
+pressure requires it; explain the tradeoff before removal.
+
 GitHub Actions must cover pull requests as well as the `master` branch. Use GitHub
 OIDC for AWS deployment, immutable image identities, health checks, a smoke test,
 and a documented rollback. Specify durable cloud storage separately from local

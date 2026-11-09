@@ -9,13 +9,11 @@ review questions. Its work is divided into smaller review units below. Slice 1.1
 is done: local API implementation, formatting, deterministic checks, container
 smoke, and bounded live inference are verified. The paid smoke recorded one safe
 but semantically imperfect citation result for the later evaluation baseline.
-Slice 1.2 implementation and deterministic UI/API checks are done. Its final local
-Compose build and review screenshot remain pending because the base-image registry
-was unavailable in the implementation environment. Deployment has not started.
-Preparation A is done; the user reports all GitHub CI
-checks passed. Preparation B is done: Boardlight's initial reference pack and
-example questions are authored and checked. Plan implementation one stage at a
-time and update status only with verification evidence.
+Slice 1.2 is done: deterministic UI/API checks, the local Compose journey, and
+browser review are verified. Deployment has not started. Preparation A is done;
+the user reports all GitHub CI checks passed. Preparation B is done: Boardlight's
+initial reference pack and example questions are authored and checked. Plan
+implementation one stage at a time and update status only with verification evidence.
 
 Primary learning: AI Engineering foundations, agent frameworks, evaluation,
 observability, LLMOps, and DevOps. Full-stack infrastructure is supporting work.

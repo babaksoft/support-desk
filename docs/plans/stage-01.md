@@ -7,8 +7,9 @@ preparation and units A/B are done. Slice 1.1 implementation and deterministic
 verification are done. The paid follow-up verified live inference and captured one
 semantic citation limitation for the later evaluation baseline. The user completed
 Black manually and fixed one formatting issue. Slice 1.1 is done. Verification
-evidence is recorded below. The breakdown below makes review units smaller while
-preserving the approved outcome and release gate.
+for Slice 1.2 is also complete. Detailed implementation and verification records
+are kept in the [Stage 1 report](stage-01-report.md). The breakdown below makes
+review units smaller while preserving the approved outcome and release gate.
 
 ## Outcome and boundaries
 
@@ -109,7 +110,7 @@ container and health/readiness checks for this API increment.
 
 ## Slice 1.2: Ask a question through Streamlit
 
-**Status: Implementation complete; verification incomplete**
+**Status: Complete**
 
 Add the question form, draft/evidence display, and useful failure messages.
 Streamlit calls FastAPI through typed interfaces. Add local Compose orchestration

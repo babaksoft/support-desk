@@ -13,17 +13,16 @@ guidance. The UI imports no repository, agent, or evidence adapter.
 Evidence: `tests/ui/test_client.py`, `tests/ui/test_app.py`, and
 `tests/composition/test_ui.py` cover the new boundary. The complete 55-test suite,
 isort, Ruff, strict mypy, lock consistency, Compose configuration, package builds,
-and `git diff --check` passed on 2026-11-09. Local Uvicorn and Streamlit processes
-reported healthy on ports 8000 and 8501. An authored question reached the
-inference-disabled API and returned its declared `generation_unavailable` response.
+and `git diff --check` passed on 2026-11-09. The capped Black check later completed
+with all 50 files unchanged. The two-service Compose build and health checks passed,
+and browser review covered the form, an answered draft with `BL-PLANS` v1 evidence,
+and the safe inference-disabled failure. Detailed evidence and screenshots are in
+the [Stage 1 report](../plans/stage-01-report.md#slice-12).
 
 Conclusion: the UI can remain a replaceable operator client when it exchanges the
 same validated request and domain result as other API consumers. Headless component
-tests establish form behavior and boundary mapping without model spend. They do not
-replace a browser screenshot or prove container build reproducibility.
-
-Operational limitation: Compose validation passed, but the local image build could
-not resolve `python:3.12-slim` because Docker Hub returned HTTP 403 before project
-code ran. No browser capture tool was available, so the Compose runtime smoke and
-review screenshot remain required before Slice 1.2 is marked complete. No model
-call was made and no additional cost was incurred.
+tests efficiently establish form behavior and boundary mapping, while the Compose
+and browser checks establish packaging, startup ordering, service connectivity, and
+operator-visible behavior. A deterministic adapter is sufficient for successful UI
+rendering checks; live inference compatibility and quality remain separate, budgeted
+evidence from Slice 1.1. No additional model cost was needed for this slice.

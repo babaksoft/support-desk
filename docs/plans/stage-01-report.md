@@ -95,34 +95,75 @@ being hidden or treated as proof of grounding quality. Slice 1.1 is complete.
 
 ## Slice 1.2
 
-Implementation record (2026-11-09): added a Streamlit question form,
-draft/evidence display, explicit unreviewed labeling, and
-safe empty-input, API, transport, and invalid-contract failures. A typed HTTP client
-validates requests and parses FastAPI results into the existing domain draft. The UI
-imports no repository or agent adapter. Added locked Streamlit/HTTPX runtime
-dependencies and two-service local Compose orchestration with API-startup ordering
-and health checks.
+### Implementation
 
-Verification record (2026-11-09): Streamlit AppTest followed the authored Free-board
-question through the form and verified the draft and `BL-PLANS` evidence display.
-Client tests covered valid results, declared API errors, transport failure, and
-invalid response payloads. All 55 deterministic tests passed outside the restricted
-sandbox, where the existing asynchronous HTTP test stalls. isort, Ruff, strict
-mypy, lock consistency, Compose configuration, source/wheel builds, and
-`git diff --check` passed. The capped Black formatting run reformatted one file and
-reached the 30-second boundary, so Black remains incomplete and was not retried.
+Implementation record (2026-11-09): added a Streamlit question form, draft and
+evidence display, explicit unreviewed labeling, and safe empty-input, API, transport,
+and invalid-contract failures. A typed HTTP client validates requests and parses
+FastAPI results into the existing domain draft. The UI imports no repository or
+agent adapter. Locked Streamlit and HTTPX runtime dependencies and two-service local
+Compose orchestration provide API startup ordering and health checks.
 
-Local Uvicorn and Streamlit entry points started successfully; API liveness and the
-Streamlit health endpoint passed. Submitting the authored question to the deliberately
-inference-disabled API returned the safe `generation_unavailable` contract. No model
-call was made. The Compose image build remains incomplete because Docker Hub returned
-HTTP 403 while resolving `python:3.12-slim`, before project code ran. A browser review
-screenshot is also outstanding because no browser capture tool was available. Do not
-mark Slice 1.2 complete until the two-service Compose journey and screenshot are
-recorded.
+### Deterministic and static verification
 
-Learning hypothesis: a typed HTTP boundary should let Streamlit distinguish safe
-application failures from transport and contract failures without depending on
-repositories or agent internals. Deterministic evidence supports that separation;
-the remaining browser and Compose checks concern delivery behavior, not the boundary
-contract. See the [learning record](../learning/slice-1.2.md).
+Streamlit AppTest followed the authored Free-board question through the form and
+verified the draft and `BL-PLANS` evidence display. Client tests covered valid
+results, declared API errors, transport failure, and invalid response payloads. All
+55 deterministic tests passed outside the restricted sandbox, where the existing
+asynchronous HTTP test stalls. isort, Ruff, strict mypy, lock consistency, Compose
+configuration, source/wheel builds, relative-link verification, and
+`git diff --check` passed.
+
+Final formatting verification (2026-11-09): the required capped command completed
+within 30 seconds and reported all 50 files unchanged:
+
+```text
+timeout 30s env UV_CACHE_DIR=<writable-cache> uv run black --check src tests
+All done! ✨ 🍰 ✨
+50 files would be left unchanged.
+```
+
+### Compose and browser verification
+
+The networked Compose build completed from the locked dependency set. Compose waited
+for the API health check before starting Streamlit. Both containers became healthy,
+ran as the image's non-root `app` user, and exposed only localhost ports. The verified
+image identities were:
+
+- API: `sha256:204da36d9ca8e02113152893666127a3cef7492428b2f9639912b79e8b15b4c1`
+- UI: `sha256:400c8d41944958ffd7b2367da0883dc896a1285fd0a29890c784e16754233851`
+
+`GET /health/live` returned `{"status":"alive"}`, and Streamlit's health endpoint
+returned `ok`. With inference explicitly disabled, the authored question returned
+HTTP 503 with the declared `generation_unavailable` code and safe message. A real
+headless Chromium session submitted the same question through the Compose-served UI
+and displayed that safe message.
+
+Browser review also used a temporary deterministic API adapter to verify the success
+display without another paid model call. It returned the authored Free-workspace
+capacity guidance with `BL-PLANS` v1, and the UI displayed the unreviewed warning,
+draft, and evidence identity. The adapter and browser helper were temporary
+verification tools and are not product dependencies.
+
+Initial question form:
+
+![Slice 1.2 question form](assets/slice-1.2/question-form.png)
+
+Successful deterministic draft and evidence:
+
+![Slice 1.2 answered draft](assets/slice-1.2/answered-draft.png)
+
+Safe response from the inference-disabled Compose API:
+
+![Slice 1.2 safe API failure](assets/slice-1.2/safe-api-failure.png)
+
+No model call was made and no additional inference cost was incurred during Slice
+1.2 verification.
+
+### Learning conclusion
+
+The typed HTTP boundary lets Streamlit distinguish safe application failures from
+transport and contract failures without depending on repositories or agent internals.
+Deterministic tests establish boundary behavior; the Compose and browser checks add
+evidence for packaging, startup ordering, service connectivity, and operator-visible
+behavior. See the [learning record](../learning/slice-1.2.md). Slice 1.2 is complete.
