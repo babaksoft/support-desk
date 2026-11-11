@@ -195,3 +195,21 @@ Implement Slice 1.3 in these review units:
    guidance.
 5. After explicit live-execution approval, provision, configure Google federation,
    deploy, verify, roll back, and tear down within the agreed budget.
+
+### Bootstrap preparation
+
+Local preparation on 2026-11-11 added the account-guarded Terraform bootstrap for
+the encrypted, versioned, non-public S3 state bucket and repository-scoped GitHub
+OIDC roles. The roles initially have state-only permissions; service permissions
+wait for the concrete infrastructure review. The first apply will use local state,
+then migrate it to the created S3 backend before application infrastructure begins.
+Separate protected GitHub environments gate state-reading plans and infrastructure
+applies so untrusted pull-request code cannot obtain state credentials.
+
+Terraform formatting and validation passed with Terraform 1.17.1 and locked AWS
+provider 6.72.0. Two mocked Terraform tests passed, covering bounded resource names,
+state retention, versioning, GitHub role names, and reuse of an existing account-level
+GitHub provider. Provider download required network access; validation and tests made
+no AWS API calls. An authenticated saved plan proposed the expected 11 additions with
+no changes or deletions. The ignored inputs and plan are owner-readable only. No
+apply ran, and no AWS resources or costs were created.
