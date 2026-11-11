@@ -4,6 +4,10 @@ Record consequential decisions in short numbered Markdown ADRs with status,
 context, decision, and rationale. State behavior plainly. Keep slice assignments,
 implementation inventories, and verification procedures in stage plans.
 
-No ADRs have been authored yet. The agreed starting direction is summarized in
-[DESIGN.md](../../DESIGN.md); use the initial review to identify decisions that
-benefit from a separate rationale record.
+Accepted decisions:
+
+- [ADR 0001: Manage AWS infrastructure with Terraform](0001-manage-aws-infrastructure-with-terraform.md)
+- [ADR 0002: Use Cognito with Google for operator access](0002-use-cognito-with-google-for-operator-access.md)
+- [ADR 0003: Use a CloudFront VPC origin for domain-free HTTPS](0003-use-a-cloudfront-vpc-origin-for-domain-free-https.md)
+
+The broader agreed direction remains in [DESIGN.md](../../DESIGN.md).

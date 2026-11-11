@@ -167,3 +167,28 @@ transport and contract failures without depending on repositories or agent inter
 Deterministic tests establish boundary behavior; the Compose and browser checks add
 evidence for packaging, startup ordering, service connectivity, and operator-visible
 behavior. See the [learning record](../learning/slice-1.2.md). Slice 1.2 is complete.
+
+## Slice 1.3
+
+Decisions recorded on 2026-11-11: use a dedicated project AWS account in `us-east-1`,
+Terraform with remote S3 state, GitHub OIDC, Cognito hosted login with Google and an
+explicit operator group, and a default CloudFront HTTPS URL backed by a VPC origin,
+internal Application Load Balancer, and one ECS/Fargate service. Reserve private
+database subnets for later private RDS PostgreSQL. Treat USD 10 as a temporary
+deployment-experiment budget, not an enforced service limit. The user completed the
+manual account baseline and budget-alert checkpoint; no cloud resources have been
+provisioned by this plan update. See [ADR 0001](../decisions/0001-manage-aws-infrastructure-with-terraform.md),
+[ADR 0002](../decisions/0002-use-cognito-with-google-for-operator-access.md), and
+[ADR 0003](../decisions/0003-use-a-cloudfront-vpc-origin-for-domain-free-https.md).
+
+Implement Slice 1.3 in these review units:
+
+1. Bootstrap encrypted, versioned, locked Terraform state and the restricted GitHub
+   OIDC roles.
+2. Add application authorization and deterministic authorized/unauthorized tests.
+3. Add reviewable networking, ECR, ECS, load-balancing, CloudFront, Cognito, secret,
+   health-check, and future database-subnet infrastructure.
+4. Add immutable image build/deployment, smoke, rollback, and teardown workflows and
+   guidance.
+5. After explicit live-execution approval, provision, configure Google federation,
+   deploy, verify, roll back, and tear down within the agreed budget.

@@ -10,10 +10,12 @@ is done: local API implementation, formatting, deterministic checks, container
 smoke, and bounded live inference are verified. The paid smoke recorded one safe
 but semantically imperfect citation result for the later evaluation baseline.
 Slice 1.2 is done: deterministic UI/API checks, the local Compose journey, and
-browser review are verified. Deployment has not started. Preparation A is done;
-the user reports all GitHub CI checks passed. Preparation B is done: Boardlight's
-initial reference pack and example questions are authored and checked. Plan
-implementation one stage at a time and update status only with verification evidence.
+browser review are verified. Slice 1.3 deployment decisions and the account budget
+checkpoint are complete; infrastructure implementation has not started. Preparation
+A is done; the user reports all GitHub CI checks passed. Preparation B is done:
+Boardlight's initial reference pack and example questions are authored and checked.
+Plan implementation one stage at a time and update status only with verification
+evidence.
 
 Primary learning: AI Engineering foundations, agent frameworks, evaluation,
 observability, LLMOps, and DevOps. Full-stack infrastructure is supporting work.
@@ -135,8 +137,10 @@ Changes ship with applicable integration checks, documentation, and recovery gui
   establish the product evidence for Slice 1.1.
 - Choose a cheaper capable initial model and explicit smoke-run/evaluation budgets
   before networked runs. Available credits and quotas do not set spending limits.
-- Confirm the target AWS account/region, infrastructure tool, access mechanism, and
-  budget before provisioning. Deployment requires an explicit execution request.
+- Slice 1.3 targets a dedicated project account in `us-east-1` using Terraform,
+  GitHub OIDC, Cognito with Google, and a default CloudFront HTTPS endpoint. The
+  temporary deployment experiment has a USD 10 budget with alerts. Deployment still
+  requires explicit live-execution approval after reviewable infrastructure exists.
 - Decide local/cloud trace destinations, export policy, retention, redaction, and
   durable telemetry storage before the first live release. Set framework exporter
   behavior before the first model run. Do not assume Compose volumes map directly

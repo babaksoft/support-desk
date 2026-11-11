@@ -122,6 +122,8 @@ include screenshots in review. Keep the first model run explicitly enabled.
 
 ## Slice 1.3: Deploy the question-answer journey
 
+**Status: In progress**
+
 Establish infrastructure as code, image build/push, GitHub OIDC, secrets, operator
 access, HTTPS, and ECS/Fargate deployment. Enforce authorization in application
 code. Document smoke verification, immutable image identities, rollback, and teardown.

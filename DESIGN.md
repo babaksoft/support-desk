@@ -1,6 +1,6 @@
 # Support Desk Design
 
-Last updated: 2026-11-08
+Last updated: 2026-11-11
 
 ## Purpose and scope
 
@@ -117,10 +117,14 @@ Cloud models may receive selected questions, evidence, and tool results. RAGAS i
 the initial evaluation choice. Phoenix with OpenTelemetry/OpenInference supplies
 LLM traces; Prometheus and Grafana supply operational metrics and dashboards.
 
-Docker Compose provides local composition. GitHub Actions provides CI/CD. The
-cloud target is Amazon ECS using Fargate, with ECR images and infrastructure as
-code. Specific versions, model identifiers, and infrastructure topology are
-verified during implementation rather than fixed by this design.
+Docker Compose provides local composition. GitHub Actions provides CI/CD through
+repository-scoped AWS OIDC roles. Terraform manages the AWS infrastructure. The
+cloud target is one Amazon ECS/Fargate service using immutable ECR images. CloudFront
+provides the AWS-generated public HTTPS endpoint and reaches an internal Application
+Load Balancer through a VPC origin. Cognito federates Google identities; FastAPI
+enforces operator-group authorization. Private database subnets reserve the later
+RDS PostgreSQL destination. Specific versions and model identifiers are verified
+during implementation rather than fixed by this design.
 
 ## Cross-cutting concerns
 
