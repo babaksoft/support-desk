@@ -35,3 +35,5 @@ telemetry/
 *.tfvars
 *.tfvars.json
 !*.tfvars.example
+*.tfbackend
+!*.tfbackend.example

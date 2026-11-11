@@ -68,11 +68,16 @@ separate, explicitly approved live action.
 ## State migration after apply
 
 The first apply necessarily uses local state because it creates the remote backend.
-Immediately afterward, copy `backend.tf.example` to `backend.tf`, replace its account
-ID placeholder, and run `terraform init -migrate-state` with
-`-backend-config=profile=support-desk-bootstrap`. Verify the migrated state before
-removing the ignored local copy. The application stack will use
-`learning/platform.tfstate` with native S3 lockfile locking.
+Immediately afterward, copy `backend.tfbackend.example` to the ignored
+`backend.tfbackend`, replace its account ID placeholder, and run:
+
+```bash
+terraform -chdir=infra/bootstrap init -migrate-state \
+  -backend-config=backend.tfbackend
+```
+
+Verify the migrated state before removing the ignored local copy. The application
+stack will use `learning/platform.tfstate` with native S3 lockfile locking.
 
 The bucket and IAM resources incur no meaningful steady compute cost, but stored S3
 data and requests are billable. Application teardown will retain this bootstrap

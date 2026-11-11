@@ -12,12 +12,13 @@ but semantically imperfect citation result for the later evaluation baseline.
 Slice 1.2 is done: deterministic UI/API checks, the local Compose journey, and
 browser review are verified. Slice 1.3 deployment decisions and the account budget
 alert are complete. Terraform is installed, and temporary Identity Center access to
-the existing Organizations management account is verified. The local Terraform
-bootstrap is implemented and tested. Its saved AWS plan contains 11 additions with
-no changes or deletions; nothing has been applied. Preparation A is done; the user
-reports all GitHub CI checks passed. Preparation B is done: Boardlight's initial
-reference pack and example questions are authored and checked. Plan implementation
-one stage at a time and update status only with verification evidence.
+the existing Organizations management account is verified. The Terraform bootstrap
+is applied: 11 state-storage and GitHub OIDC resources are active, bootstrap state is
+migrated to S3 with native locking, and the post-apply plan is clean. Preparation A
+is done; the user reports all GitHub CI checks passed. Preparation B is done:
+Boardlight's initial reference pack and example questions are authored and checked.
+Plan implementation one stage at a time and update status only with verification
+evidence.
 
 Primary learning: AI Engineering foundations, agent frameworks, evaluation,
 observability, LLMOps, and DevOps. Full-stack infrastructure is supporting work.
