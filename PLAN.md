@@ -15,7 +15,9 @@ alert are complete. Terraform is installed, and temporary Identity Center access
 the existing Organizations management account is verified. The Terraform bootstrap
 is applied: 11 state-storage and GitHub OIDC resources are active, bootstrap state is
 migrated to S3 with native locking, and the post-apply plan is clean. Preparation A
-is done; the user reports all GitHub CI checks passed. Preparation B is done:
+is done. Application authentication and operator-group authorization are implemented
+with explicit local and Cognito adapters; deterministic authorized and unauthorized
+checks pass. The user reports all GitHub CI checks passed. Preparation B is done:
 Boardlight's initial reference pack and example questions are authored and checked.
 Plan implementation one stage at a time and update status only with verification
 evidence.

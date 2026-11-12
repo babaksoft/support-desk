@@ -3,6 +3,7 @@ services:
     build: .
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      SUPPORT_DESK_AUTH_MODE: local
       SUPPORT_DESK_ENABLE_INFERENCE: ${SUPPORT_DESK_ENABLE_INFERENCE:-0}
       SUPPORT_DESK_MODEL: ${SUPPORT_DESK_MODEL:-}
     ports:

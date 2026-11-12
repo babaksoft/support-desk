@@ -75,9 +75,16 @@ class HttpQuestionClient:
             Root URL of the Support Desk API.
         timeout_seconds:
             Overall HTTP request timeout in seconds.
+        access_token:
+            Operator access token sent as bearer authorization.
     """
 
-    def __init__(self, base_url: str, timeout_seconds: float = 50.0) -> None:
+    def __init__(
+        self,
+        base_url: str,
+        timeout_seconds: float = 50.0,
+        access_token: str | None = None,
+    ) -> None:
         """Initialize the HTTP question client.
 
         Args:
@@ -85,10 +92,13 @@ class HttpQuestionClient:
                 Root URL of the Support Desk API.
             timeout_seconds:
                 Overall HTTP request timeout in seconds.
+            access_token:
+                Operator access token sent as bearer authorization.
         """
 
         self.base_url = base_url.rstrip("/")
         self.timeout_seconds = timeout_seconds
+        self.access_token = access_token
 
     def ask(self, question: str) -> AnswerDraft:
         """Submit an operator question.
@@ -114,6 +124,7 @@ class HttpQuestionClient:
             response = httpx.post(
                 f"{self.base_url}/questions",
                 json=request.model_dump(mode="json"),
+                headers=self._authorization_headers(),
                 timeout=self.timeout_seconds,
             )
         except httpx.RequestError as exc:
@@ -126,6 +137,17 @@ class HttpQuestionClient:
             return AnswerDraft.model_validate(response.json())
         except (ValueError, ValidationError) as exc:
             raise InvalidApiResponse from exc
+
+    def _authorization_headers(self) -> dict[str, str]:
+        """Build the optional bearer authorization header.
+
+        Returns:
+            HTTP headers containing the access token when configured.
+        """
+
+        if self.access_token is None:
+            return {}
+        return {"Authorization": f"Bearer {self.access_token}"}
 
     @staticmethod
     def _raise_api_failure(response: httpx.Response) -> None:

@@ -4,7 +4,11 @@ import pytest
 from fastapi.testclient import TestClient
 from pytest import MonkeyPatch
 
-from support_desk.composition.api import InferenceSettings, build_app
+from support_desk.composition.api import (
+    AuthenticationSettings,
+    InferenceSettings,
+    build_app,
+)
 
 
 def test_builds_disabled_api_without_provider_settings(
@@ -21,6 +25,10 @@ def test_builds_disabled_api_without_provider_settings(
         "SUPPORT_DESK_ENABLE_INFERENCE",
         "SUPPORT_DESK_MODEL",
         "OPENAI_API_KEY",
+        "SUPPORT_DESK_AUTH_MODE",
+        "SUPPORT_DESK_COGNITO_ISSUER",
+        "SUPPORT_DESK_COGNITO_CLIENT_ID",
+        "SUPPORT_DESK_OPERATOR_GROUP",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -92,3 +100,78 @@ def test_builds_enabled_api_without_contacting_provider(
     assert "synthetic-key" not in repr(settings)
     with TestClient(build_app()) as client:
         assert client.get("/health/ready").status_code == 200
+
+
+def test_defaults_to_explicit_local_authentication(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Use the local-only operator adapter when no cloud settings exist.
+
+    Args:
+        monkeypatch:
+            Environment isolation fixture.
+    """
+
+    for name in (
+        "SUPPORT_DESK_AUTH_MODE",
+        "SUPPORT_DESK_COGNITO_ISSUER",
+        "SUPPORT_DESK_COGNITO_CLIENT_ID",
+        "SUPPORT_DESK_OPERATOR_GROUP",
+    ):
+        monkeypatch.delenv(name, raising=False)
+
+    settings = AuthenticationSettings.from_environment()
+
+    assert settings.mode == "local"
+    assert settings.issuer is None
+    assert settings.operator_group == "operators"
+
+
+@pytest.mark.parametrize(
+    ("issuer", "client_id"),
+    [
+        ("", "synthetic-client"),
+        ("https://cognito-idp.us-east-1.amazonaws.com/us-east-1_pool", ""),
+    ],
+)
+def test_rejects_incomplete_cognito_authentication(
+    monkeypatch: MonkeyPatch,
+    issuer: str,
+    client_id: str,
+) -> None:
+    """Reject Cognito mode without both issuer and app client.
+
+    Args:
+        monkeypatch:
+            Environment isolation fixture.
+        issuer:
+            Candidate Cognito issuer.
+        client_id:
+            Candidate Cognito app-client ID.
+    """
+
+    monkeypatch.setenv("SUPPORT_DESK_AUTH_MODE", "cognito")
+    monkeypatch.setenv("SUPPORT_DESK_COGNITO_ISSUER", issuer)
+    monkeypatch.setenv("SUPPORT_DESK_COGNITO_CLIENT_ID", client_id)
+
+    with pytest.raises(ValueError, match="requires issuer and client ID"):
+        AuthenticationSettings.from_environment()
+
+
+def test_rejects_non_https_cognito_issuer(monkeypatch: MonkeyPatch) -> None:
+    """Reject cleartext Cognito issuer configuration.
+
+    Args:
+        monkeypatch:
+            Environment isolation fixture.
+    """
+
+    monkeypatch.setenv("SUPPORT_DESK_AUTH_MODE", "cognito")
+    monkeypatch.setenv(
+        "SUPPORT_DESK_COGNITO_ISSUER",
+        "http://cognito-idp.us-east-1.amazonaws.com/us-east-1_pool",
+    )
+    monkeypatch.setenv("SUPPORT_DESK_COGNITO_CLIENT_ID", "synthetic-client")
+
+    with pytest.raises(ValueError, match="must use HTTPS"):
+        AuthenticationSettings.from_environment()

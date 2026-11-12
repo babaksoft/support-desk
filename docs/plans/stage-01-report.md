@@ -219,3 +219,20 @@ native lockfile locking. Remote state listed all 11 resources, and a fresh refre
 reported no configuration drift. The retained ignored migration backup is
 owner-readable only. IAM has no direct charge; the small S3 state object and requests
 begin minimal usage-based billing within the agreed budget.
+
+### Authentication and authorization implementation
+
+Local implementation on 2026-11-11 added a domain authentication contract, an
+application-owned `operators` group decision, and infrastructure adapters for local
+development and Cognito access tokens. The Cognito adapter verifies the RS256
+signature, expiry, issuer, app client, access-token use, subject, and bounded group
+claims. The API fails closed when authentication is unavailable, returns stable 401
+and 403 responses, and keeps liveness public. Local Compose explicitly uses the
+synthetic local operator; shared deployment must use Cognito.
+
+PyJWT and its cryptography support are locked as runtime dependencies. The focused
+authentication suite passed 13 tests and the complete deterministic suite passed all
+77 tests. isort, Ruff, and strict mypy passed. Black identified one formatting change
+before reaching its 30-second cap; the file was reformatted with the compatible Ruff
+formatter, and Black was not retried as required after a timeout. Cognito and Google
+resources and browser login remain for the infrastructure review unit.

@@ -6,12 +6,18 @@ from fastapi.testclient import TestClient
 
 from support_desk.api import create_app
 from support_desk.application import AnswerService
+from support_desk.infrastructure import LocalOperatorAuthenticator
 
 
 def test_configured_api_is_live_and_ready() -> None:
     """Report liveness and readiness when generation is configured."""
 
-    with TestClient(create_app(AnswerService(AsyncMock()))) as client:
+    with TestClient(
+        create_app(
+            AnswerService(AsyncMock()),
+            authenticator=LocalOperatorAuthenticator("operators"),
+        )
+    ) as client:
         assert client.get("/health/live").json() == {"status": "alive"}
         assert client.get("/health/ready").json() == {"status": "ready"}
 

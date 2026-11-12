@@ -4,6 +4,16 @@ from support_desk.infrastructure.agent import (
     AgentsAnswerGenerator,
     GenerationDiagnostics,
 )
+from support_desk.infrastructure.authentication import (
+    CognitoAccessTokenAuthenticator,
+    LocalOperatorAuthenticator,
+)
 from support_desk.infrastructure.references import ReferenceLookup
 
-__all__ = ["AgentsAnswerGenerator", "GenerationDiagnostics", "ReferenceLookup"]
+__all__ = [
+    "AgentsAnswerGenerator",
+    "CognitoAccessTokenAuthenticator",
+    "GenerationDiagnostics",
+    "LocalOperatorAuthenticator",
+    "ReferenceLookup",
+]

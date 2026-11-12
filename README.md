@@ -16,6 +16,7 @@ limitation. There is no configured cloud deployment.
 - `POST /questions`: bounded question generation with structured drafts and citations.
 - `GET /health/live`: process liveness; `GET /health/ready`: local configuration readiness.
 - Streamlit question form with draft, evidence, and safe failure displays.
+- Application-enforced operator authorization with local and Cognito adapters.
 - Packaged Boardlight v1 evidence, also included in the wheel and container.
 
 ## Product scope
@@ -50,7 +51,7 @@ responsibilities and the planned production stack are recorded in [DESIGN.md](DE
 ## Technology
 
 Streamlit and HTTPX implement the operator client. FastAPI, Starlette, Pydantic,
-Uvicorn, OpenAI Agents SDK, and the OpenAI client implement the current API.
+PyJWT, Uvicorn, OpenAI Agents SDK, and the OpenAI client implement the current API.
 Starlette supplies ASGI types and response primitives for the bounded request
 middleware. Python 3.12 and uv manage the package and locked dependencies. Black
 and isort format code; Ruff checks lint, annotations, and Google-style docstrings;
@@ -83,7 +84,8 @@ uv run uvicorn support_desk.composition.api:build_app --factory --host 127.0.0.1
 
 Open `http://127.0.0.1:8000/docs` for the contract. In the default configuration,
 liveness succeeds and readiness/question generation return 503. Readiness checks
-configuration only; it does not contact OpenAI or verify model access.
+generation and authentication configuration only; it does not contact OpenAI,
+Cognito, or verify external access.
 
 In another terminal, start the operator interface:
 
@@ -99,16 +101,27 @@ explicitly enabled.
 
 | Environment variable | Behavior |
 | --- | --- |
+| `SUPPORT_DESK_AUTH_MODE` | `local` for loopback development or `cognito` for deployed token verification; defaults to `local` |
+| `SUPPORT_DESK_COGNITO_ISSUER` | Exact HTTPS Cognito user-pool issuer; required in `cognito` mode |
+| `SUPPORT_DESK_COGNITO_CLIENT_ID` | Cognito app client accepted by the API; required in `cognito` mode |
+| `SUPPORT_DESK_OPERATOR_GROUP` | Cognito group authorized for operator use cases; defaults to `operators` |
 | `SUPPORT_DESK_ENABLE_INFERENCE` | Set exactly `1` to permit paid generation; unset or `0` disables it |
 | `SUPPORT_DESK_MODEL` | Explicit OpenAI Responses model ID; no default |
 | `OPENAI_API_KEY` | Provider credential, required when enabling inference |
 | `SUPPORT_DESK_API_URL` | Streamlit API root; defaults to `http://127.0.0.1:8000` |
 
+`local` authentication creates a synthetic operator and is allowed only for the
+documented loopback and local Compose paths. A shared deployment must use `cognito`;
+the API then verifies the RS256 signature, expiry, issuer, app client, access-token
+use, and group claims before the application authorizes the `operators` group.
+Health endpoints remain public. Cognito infrastructure and browser login are not yet
+provisioned.
+
 Do not enable inference until a model and run budget are agreed. Export credentials
 through your shell's secret mechanism; keep them out of source and command history.
 After approval, set the variables and restart the same API command. Invalid enablement
 values and enabled inference without both other settings fail during process startup.
-A request is:
+A local-mode request is:
 
 ```bash
 curl --fail-with-body http://127.0.0.1:8000/questions -H 'Content-Type: application/json' -d '{"question":"How many boards can a Free workspace have?"}'
@@ -121,9 +134,10 @@ up to three model calls. Limits are source constants: 2,048 question characters,
 output tokens per model turn (up to 3,072 total). Provider retries are disabled;
 failures require explicit retry. These bound a request, not cumulative spending.
 Cancellation cannot guarantee that remote inference stops or incurs no charge.
-API failures contain stable `code` and safe `message` fields. HTTP 413 means the
-request is too large, 429 means busy, 502 means generation failed, 503 means generation
-is unavailable, and 504 means the deadline was exceeded.
+API failures contain stable `code` and safe `message` fields. HTTP 401 means the
+access token is invalid, 403 means the actor lacks operator access, 413 means the
+request is too large, 429 means busy, 502 means generation failed, 503 means a
+dependency is unavailable, and 504 means the deadline was exceeded.
 
 ### Paid model smoke
 
@@ -154,8 +168,9 @@ evidence but cited the plan and upgrade sources it inspected; those citations do
 not prove that no separate refund policy exists. This limitation is retained for
 the evaluation baseline.
 
-Use one worker and localhost: the admission slot is process-local, and this increment
-has no operator authentication. Shared hosting/access controls arrive in Slice 1.3.
+Use one worker and localhost: the admission slot is process-local. The local
+authentication adapter is not a shared-hosting access control; deployed Cognito
+configuration and login arrive with the Slice 1.3 infrastructure.
 
 ## Local Compose
 

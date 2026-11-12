@@ -5,12 +5,14 @@ from functools import partial
 from unittest.mock import AsyncMock
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from support_desk.api import create_app
 from support_desk.api.schemas import AnswerRequest
 from support_desk.application import AnswerService, GenerationBusy
 from support_desk.domain import AnswerDraft
+from support_desk.infrastructure import LocalOperatorAuthenticator
 
 
 def test_returns_unreviewed_draft(draft: AnswerDraft) -> None:
@@ -23,7 +25,7 @@ def test_returns_unreviewed_draft(draft: AnswerDraft) -> None:
 
     generator = AsyncMock()
     generator.generate.return_value = draft
-    with TestClient(create_app(AnswerService(generator))) as client:
+    with TestClient(_create_test_app(AnswerService(generator))) as client:
         response = client.post("/questions", json={"question": " How many boards? "})
         assert response.status_code == 200
         assert response.json() == draft.model_dump(mode="json")
@@ -40,7 +42,7 @@ def test_rejects_invalid_question(question: str) -> None:
     """
 
     generator = AsyncMock()
-    with TestClient(create_app(AnswerService(generator))) as client:
+    with TestClient(_create_test_app(AnswerService(generator))) as client:
         assert client.post("/questions", json={"question": question}).status_code == 422
     generator.generate.assert_not_awaited()
 
@@ -48,7 +50,7 @@ def test_rejects_invalid_question(question: str) -> None:
 def test_bounds_body_and_rejects_unknown_fields() -> None:
     """Reject excessive JSON and undeclared request fields."""
 
-    with TestClient(create_app()) as client:
+    with TestClient(_create_test_app()) as client:
         response = client.post("/questions", content=b"x" * 16385)
         assert response.status_code == 413
         assert response.json() == {
@@ -66,7 +68,7 @@ def test_bounds_body_and_rejects_unknown_fields() -> None:
 def test_unconfigured_api_rejects_generation() -> None:
     """Expose unavailable generation without requiring provider access."""
 
-    with TestClient(create_app()) as client:
+    with TestClient(_create_test_app()) as client:
         question = client.post("/questions", json={"question": "Hi"})
         assert question.status_code == 503
         assert question.json() == {
@@ -80,7 +82,7 @@ def test_reports_busy_generation_with_retry_guidance() -> None:
 
     service = AsyncMock(spec=AnswerService)
     service.execute.side_effect = GenerationBusy
-    with TestClient(create_app(service)) as client:
+    with TestClient(_create_test_app(service)) as client:
         response = client.post("/questions", json={"question": "Hi"})
     assert response.status_code == 429
     assert response.headers["Retry-After"] == "5"
@@ -106,7 +108,7 @@ def test_sanitizes_generation_failures(failure: Exception, status: int) -> None:
 
     generator = AsyncMock()
     generator.generate.side_effect = failure
-    with TestClient(create_app(AnswerService(generator))) as client:
+    with TestClient(_create_test_app(AnswerService(generator))) as client:
         response = client.post("/questions", json={"question": "Hi"})
         assert response.status_code == status
         assert response.json()["code"] in {
@@ -128,7 +130,7 @@ def test_deadline_releases_generation_slot(draft: AnswerDraft) -> None:
 
     generator.generate.side_effect = partial(_slow_generate, draft)
     with TestClient(
-        create_app(AnswerService(generator, timeout_seconds=0.01))
+        _create_test_app(AnswerService(generator, timeout_seconds=0.01))
     ) as client:
         assert client.post("/questions", json={"question": "Hi"}).status_code == 504
         generator.generate.side_effect = None
@@ -200,3 +202,20 @@ async def _blocking_generate(
     started.set()
     await asyncio.Event().wait()
     return draft
+
+
+def _create_test_app(service: AnswerService | None = None) -> FastAPI:
+    """Create an API with explicit local test authentication.
+
+    Args:
+        service:
+            Optional answer generation service.
+
+    Returns:
+        API configured with deterministic local operator access.
+    """
+
+    return create_app(
+        service,
+        authenticator=LocalOperatorAuthenticator("operators"),
+    )

@@ -38,9 +38,35 @@ def test_returns_typed_draft(
         (
             "http://api:8000/questions",
             {"question": "How many boards?"},
+            {},
             50.0,
         )
     ]
+
+
+def test_sends_operator_access_token(
+    monkeypatch: pytest.MonkeyPatch, draft: AnswerDraft
+) -> None:
+    """Send the configured operator token as bearer authorization.
+
+    Args:
+        monkeypatch:
+            Pytest attribute patching helper.
+        draft:
+            Valid authored draft fixture.
+    """
+
+    post = _stub_post(
+        monkeypatch,
+        httpx.Response(200, json=draft.model_dump(mode="json")),
+    )
+
+    HttpQuestionClient(
+        "http://api:8000",
+        access_token="synthetic-token",
+    ).ask("How many boards?")
+
+    assert post[0][2] == {"Authorization": "Bearer synthetic-token"}
 
 
 def test_reports_safe_api_failure(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -110,7 +136,7 @@ def test_reports_unavailable_api(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def _stub_post(
     monkeypatch: pytest.MonkeyPatch, response: httpx.Response
-) -> list[tuple[str, object, float]]:
+) -> list[tuple[str, object, dict[str, str], float]]:
     """Replace the HTTP post call with a recorded response.
 
     Args:
@@ -123,9 +149,15 @@ def _stub_post(
         Mutable record of calls made through the stub.
     """
 
-    calls: list[tuple[str, object, float]] = []
+    calls: list[tuple[str, object, dict[str, str], float]] = []
 
-    def post(url: str, *, json: object, timeout: float) -> httpx.Response:
+    def post(
+        url: str,
+        *,
+        json: object,
+        headers: dict[str, str],
+        timeout: float,
+    ) -> httpx.Response:
         """Record one HTTP request and return the configured response.
 
         Args:
@@ -133,6 +165,8 @@ def _stub_post(
                 Target question URL.
             json:
                 Serialized question request.
+            headers:
+                HTTP request headers.
             timeout:
                 Overall HTTP deadline.
 
@@ -140,7 +174,7 @@ def _stub_post(
             Configured HTTP response.
         """
 
-        calls.append((url, json, timeout))
+        calls.append((url, json, headers, timeout))
         return response
 
     typed_post: Callable[..., httpx.Response] = post
@@ -148,7 +182,13 @@ def _stub_post(
     return calls
 
 
-def _fail_post(url: str, *, json: object, timeout: float) -> httpx.Response:
+def _fail_post(
+    url: str,
+    *,
+    json: object,
+    headers: dict[str, str],
+    timeout: float,
+) -> httpx.Response:
     """Simulate a failed API connection.
 
     Args:
@@ -156,6 +196,8 @@ def _fail_post(url: str, *, json: object, timeout: float) -> httpx.Response:
             Target question URL.
         json:
             Serialized question request.
+        headers:
+            HTTP request headers.
         timeout:
             Overall HTTP deadline.
 
@@ -164,4 +206,5 @@ def _fail_post(url: str, *, json: object, timeout: float) -> httpx.Response:
             The API connection fails.
     """
 
+    del url, json, headers, timeout
     raise httpx.ConnectError("private transport detail")

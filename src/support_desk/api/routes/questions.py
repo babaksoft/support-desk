@@ -1,8 +1,10 @@
 """Expose product-question generation endpoints."""
 
-from fastapi import APIRouter, Request
+from typing import Annotated
 
-from support_desk.api.dependencies import require_generation
+from fastapi import APIRouter, Depends, Request
+
+from support_desk.api.dependencies import require_generation, require_operator
 from support_desk.api.errors import ApiError
 from support_desk.api.schemas import AnswerRequest, ErrorResponse
 from support_desk.application import (
@@ -10,7 +12,7 @@ from support_desk.application import (
     GenerationFailed,
     GenerationTimedOut,
 )
-from support_desk.domain import AnswerDraft
+from support_desk.domain import AnswerDraft, AuthenticatedActor
 
 router = APIRouter(tags=["questions"])
 
@@ -19,7 +21,9 @@ router = APIRouter(tags=["questions"])
     "/questions",
     response_model=AnswerDraft,
     responses={
+        401: {"model": ErrorResponse},
         413: {"model": ErrorResponse},
+        403: {"model": ErrorResponse},
         429: {"model": ErrorResponse},
         502: {"model": ErrorResponse},
         503: {"model": ErrorResponse},
@@ -27,7 +31,11 @@ router = APIRouter(tags=["questions"])
     },
     name="answer",
 )
-async def answer(question: AnswerRequest, request: Request) -> AnswerDraft:
+async def answer(
+    question: AnswerRequest,
+    request: Request,
+    operator: Annotated[AuthenticatedActor, Depends(require_operator)],
+) -> AnswerDraft:
     """Draft a product answer for operator review.
 
     Args:
@@ -35,15 +43,18 @@ async def answer(question: AnswerRequest, request: Request) -> AnswerDraft:
             Validated operator question.
         request:
             Current HTTP request.
+        operator:
+            Authenticated actor authorized for operator use cases.
 
     Returns:
         Unreviewed answer and source references.
 
     Raises:
         ApiError:
-            Generation is busy, timed out, or failed.
+            Authentication, authorization, or generation fails.
     """
 
+    del operator
     service = require_generation(request)
     try:
         return await service.execute(question.question)

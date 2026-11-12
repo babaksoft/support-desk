@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Request
 
-from support_desk.api.dependencies import require_generation
+from support_desk.api.dependencies import require_authentication, require_generation
 from support_desk.api.schemas import ErrorResponse, HealthResponse
 
 router = APIRouter(prefix="/health", tags=["health"])
@@ -26,7 +26,7 @@ async def live() -> HealthResponse:
     name="ready",
 )
 async def ready(request: Request) -> HealthResponse:
-    """Report that generation dependencies are configured.
+    """Report that generation and authentication dependencies are configured.
 
     Args:
         request:
@@ -37,4 +37,5 @@ async def ready(request: Request) -> HealthResponse:
     """
 
     require_generation(request)
+    require_authentication(request)
     return HealthResponse(status="ready")
