@@ -13,16 +13,18 @@ deployment also has a USD 10 experiment budget.
 
 Use the default CloudFront `*.cloudfront.net` hostname and certificate as the public
 entry point. CloudFront connects through a VPC origin to an internal Application
-Load Balancer. The load balancer routes only to the Streamlit container in one ECS
-service; Streamlit calls the colocated FastAPI container over the task-local network.
-Disable caching for authenticated dynamic traffic and forward the request features
-needed by Streamlit, including WebSocket upgrades.
+Load Balancer in two private origin subnets. The load balancer routes only to the
+Streamlit container in one ECS service; Streamlit calls the colocated FastAPI
+container over the task-local network. Disable caching for authenticated dynamic
+traffic and forward the request features needed by Streamlit, including WebSocket
+upgrades.
 
 Run one Fargate task across public application subnets with a public IP for bounded
 outbound access, avoiding a NAT gateway. Security groups admit task traffic only
 from the internal load balancer; the task has no direct public listener. Use two
-Availability Zones for the load balancer and subnets, while accepting that one task
-does not provide application high availability.
+supported Availability Zone IDs for private origin, public application, and private
+database subnet pairs, while accepting that one task does not provide application
+high availability.
 
 Reserve private database subnets for a later private Amazon RDS for PostgreSQL
 destination. Do not provision RDS in Slice 1.3. Keep the deployment temporary,

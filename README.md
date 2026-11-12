@@ -114,8 +114,9 @@ explicitly enabled.
 documented loopback and local Compose paths. A shared deployment must use `cognito`;
 the API then verifies the RS256 signature, expiry, issuer, app client, access-token
 use, and group claims before the application authorizes the `operators` group.
-Health endpoints remain public. Cognito infrastructure and browser login are not yet
-provisioned.
+Health endpoints remain public. Reviewable Terraform defines the Cognito and
+application infrastructure, but it has not been provisioned. Browser
+authorization-code session handling and Google federation remain pending.
 
 Do not enable inference until a model and run budget are agreed. Export credentials
 through your shell's secret mechanism; keep them out of source and command history.
@@ -220,6 +221,8 @@ checks.
 - [DESIGN.md](DESIGN.md): intended behavior and architecture.
 - [PLAN.md](PLAN.md): delivery stages and completion criteria.
 - [Stage 1](docs/plans/stage-01.md): walking-skeleton slices.
+- [Application platform](infra/platform/README.md): review and safety boundary for
+  the unprovisioned Slice 1.3 AWS stack.
 - [Boardlight](docs/product/boardlight/README.md): product evidence and example questions.
 - [Decisions](docs/decisions/README.md): concise architectural decisions.
 - [Learning record](docs/learning/README.md): measured experiments and lessons.

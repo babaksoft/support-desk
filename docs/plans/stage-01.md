@@ -11,6 +11,11 @@ for Slice 1.2 is also complete. Detailed implementation and verification records
 are kept in the [Stage 1 report](stage-01-report.md). The breakdown below makes
 review units smaller while preserving the approved outcome and release gate.
 
+Slice 1.3 reviewable application infrastructure is implemented and locally verified.
+No application-platform resource has been provisioned. Delivery operations, browser
+session handling, Google federation, live deployment, smoke, rollback, and teardown
+remain pending.
+
 ## Outcome and boundaries
 
 An operator asks about a fictional SaaS product, receives an evidence-based draft,

@@ -1,0 +1,7 @@
+bucket       = "support-desk-terraform-state-ACCOUNT_ID"
+key          = "learning/platform.tfstate"
+region       = "us-east-1"
+use_lockfile = true
+encrypt      = true
+profile      = "support-desk-bootstrap"
+

@@ -236,3 +236,32 @@ authentication suite passed 13 tests and the complete deterministic suite passed
 before reaching its 30-second cap; the file was reformatted with the compatible Ruff
 formatter, and Black was not retried as required after a timeout. Cognito and Google
 resources and browser login remain for the infrastructure review unit.
+
+### Application-platform infrastructure
+
+Local implementation on 2026-11-12 added the account-guarded application stack under
+`infra/platform`. It defines six subnets across two supported Availability Zone IDs:
+private CloudFront-origin subnets for the internal ALB, public application subnets
+for an explicitly addressed Fargate task, and private subnets plus a subnet group for
+the later RDS PostgreSQL destination. There is no NAT gateway. Security groups admit
+ALB traffic only from the CloudFront origin-facing prefix list and task traffic only
+from the ALB on the Streamlit port; FastAPI remains task-local.
+
+The stack also defines an immutable, scan-on-push ECR repository, one API/UI task
+definition pinned by image digest, an ECS service with deployment-circuit-breaker
+rollback, seven-day CloudWatch logs, an internal ALB with Streamlit health checks,
+a non-caching CloudFront VPC origin, a closed-sign-up Cognito user pool and operator
+group, and a recoverable Secrets Manager container. Terraform creates no secret
+version, so the OpenAI credential does not enter configuration or state. The service
+desired count defaults to zero and is capped at one. Google federation, browser
+authorization-code session handling, secret population, and task startup remain
+explicit prerequisites rather than claimed capabilities.
+
+Terraform 1.17.1 formatting and validation passed with locked AWS provider 6.73.0.
+Two mocked tests passed, covering the subnet topology, stopped-by-default and one-task
+service limits, immutable repository, exact image-digest construction, internal ALB,
+disabled dynamic caching, closed public sign-up, and secret recovery window. The
+provider download was networked; validation and mocked tests made no AWS API calls.
+No platform plan was produced against the live account, and no application resource
+was provisioned. The next review unit is delivery operations and the missing browser
+authentication session needed for the live Cognito journey.

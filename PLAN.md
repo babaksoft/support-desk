@@ -17,10 +17,13 @@ is applied: 11 state-storage and GitHub OIDC resources are active, bootstrap sta
 migrated to S3 with native locking, and the post-apply plan is clean. Preparation A
 is done. Application authentication and operator-group authorization are implemented
 with explicit local and Cognito adapters; deterministic authorized and unauthorized
-checks pass. The user reports all GitHub CI checks passed. Preparation B is done:
-Boardlight's initial reference pack and example questions are authored and checked.
-Plan implementation one stage at a time and update status only with verification
-evidence.
+checks pass. Reviewable application-platform Terraform now defines the network, ECR,
+stopped ECS service, internal ALB, CloudFront VPC origin, Cognito resources, runtime
+secret container, logs, and future PostgreSQL subnet group; local validation and two
+mocked tests pass, but none of these resources has been provisioned. The user reports
+all GitHub CI checks passed. Preparation B is done: Boardlight's initial reference
+pack and example questions are authored and checked. Plan implementation one stage
+at a time and update status only with verification evidence.
 
 Primary learning: AI Engineering foundations, agent frameworks, evaluation,
 observability, LLMOps, and DevOps. Full-stack infrastructure is supporting work.
