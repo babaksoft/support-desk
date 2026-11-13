@@ -98,6 +98,11 @@ run "builds_bounded_learning_platform" {
   }
 
   assert {
+    condition     = aws_cognito_user_pool_client.operators.allowed_oauth_scopes == toset(["email", "openid", "profile"])
+    error_message = "Cognito must allow Streamlit's standard OIDC scopes."
+  }
+
+  assert {
     condition     = aws_secretsmanager_secret.openai_api_key.recovery_window_in_days == 7
     error_message = "Secret deletion must retain the configured recovery window."
   }
