@@ -159,3 +159,15 @@ resource "aws_iam_role_policy" "github_apply_state" {
   role   = aws_iam_role.github_apply.id
   policy = local.apply_state_policy
 }
+
+resource "aws_iam_role_policy" "github_plan_platform" {
+  name   = "support-desk-platform-plan"
+  role   = aws_iam_role.github_plan.id
+  policy = local.plan_platform_policy
+}
+
+resource "aws_iam_role_policy" "github_apply_platform" {
+  name   = "support-desk-platform-apply"
+  role   = aws_iam_role.github_apply.id
+  policy = local.apply_platform_policy
+}

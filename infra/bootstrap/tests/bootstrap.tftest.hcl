@@ -43,6 +43,46 @@ run "creates_bounded_bootstrap_resources" {
     condition     = aws_iam_role.github_apply.name == "support-desk-github-apply"
     error_message = "The GitHub apply role must use the bounded project name."
   }
+
+  assert {
+    condition = !contains(
+      jsondecode(aws_iam_role_policy.github_plan_platform.policy).Statement[0].Action,
+      "ecs:UpdateService",
+    )
+    error_message = "The plan role must not receive platform mutation permissions."
+  }
+
+  assert {
+    condition = contains(
+      jsondecode(aws_iam_role_policy.github_apply_platform.policy).Statement[0].Action,
+      "ecr:PutImage",
+    )
+    error_message = "The apply role must be able to push immutable release images."
+  }
+
+  assert {
+    condition = (
+      jsondecode(aws_iam_role_policy.github_apply_platform.policy).Statement[1].Resource ==
+      "arn:aws:iam::123456789012:role/support-desk-learning-*"
+    )
+    error_message = "Task-role management must stay scoped to the learning platform."
+  }
+
+  assert {
+    condition = toset(
+      jsondecode(aws_iam_role_policy.github_apply_platform.policy).Statement[2].Condition.StringEquals["iam:AWSServiceName"]
+      ) == toset([
+      "ecs.amazonaws.com",
+      "elasticloadbalancing.amazonaws.com",
+      "vpcorigin.cloudfront.amazonaws.com",
+    ])
+    error_message = "Service-linked role creation must stay limited to required services."
+  }
+
+  assert {
+    condition     = length(aws_iam_role_policy.github_apply_platform.policy) <= 10240
+    error_message = "The apply policy must fit the AWS inline role-policy size limit."
+  }
 }
 
 run "accepts_an_existing_github_provider" {

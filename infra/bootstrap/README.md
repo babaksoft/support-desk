@@ -12,8 +12,13 @@ It does not create the application network, runtime, authentication, or database
 - GitHub trust is limited to `babaksoft/support-desk`. Only the protected
   `learning-plan` environment may assume the state-reading plan role, and only the
   protected `learning` environment may assume the apply role.
-- Both GitHub roles initially have state-only permissions. Later infrastructure
-  permissions require a separate reviewed change.
+- The plan role can read only the state and application-platform resource types.
+  The apply role has the explicit service actions needed to provision, deploy,
+  roll back, stop, and tear down this learning platform. IAM mutation and
+  `iam:PassRole` are restricted to `support-desk-learning-*` roles. Several AWS
+  create/list APIs do not support resource-level constraints, so the apply policy
+  uses `Resource = "*"` for its enumerated platform actions; the protected
+  environment and account guard remain material controls.
 
 Configure required reviewers and restrict deployment branches on the GitHub
 `learning-plan` and `learning` environments before any workflow uses either role.
@@ -82,3 +87,18 @@ stack will use `learning/platform.tfstate` with native S3 lockfile locking.
 The bucket and IAM resources incur no meaningful steady compute cost, but stored S3
 data and requests are billable. Application teardown will retain this bootstrap
 until all dependent Terraform state has been migrated or destroyed deliberately.
+
+## Enable the delivery workflow
+
+Apply the reviewed bootstrap update locally before the workflow can manage platform
+resources. This is the one-time permission bootstrap; the state-only apply role
+cannot grant itself the new permissions:
+
+```bash
+terraform -chdir=infra/bootstrap plan -out=bootstrap.tfplan
+terraform -chdir=infra/bootstrap show bootstrap.tfplan
+terraform -chdir=infra/bootstrap apply bootstrap.tfplan
+```
+
+Applying is a live account change and requires renewed approval. Verify that the
+saved plan changes only the two inline GitHub role policies before applying it.

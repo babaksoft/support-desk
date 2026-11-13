@@ -50,10 +50,10 @@ terraform -chdir=infra/platform show platform.tfplan
 The saved plan is ignored and can contain sensitive infrastructure values. Applying
 it is a separate explicitly approved live action.
 
-Local operations use the `support-desk-bootstrap` profile by default. A later GitHub
-OIDC workflow must set `use_aws_profile = false` so the provider uses the temporary
-ambient credentials assumed by the protected environment instead of looking for a
-developer profile.
+Local operations use the `support-desk-bootstrap` profile by default. The GitHub
+OIDC workflow sets `use_aws_profile = false`, so Terraform uses the temporary ambient
+credentials assumed by the protected environment instead of looking for a developer
+profile.
 
 ## Credentials and federation
 
@@ -62,7 +62,7 @@ version, keeping the OpenAI key out of configuration and Terraform state. Delive
 operations will document a non-printing, explicitly approved way to populate it
 from the local smoke credential. Never pass the key as a Terraform variable.
 
-The first infrastructure apply produces the exact CloudFront application callback
+The first stopped-service `provision` operation produces the exact CloudFront application callback
 and Cognito Google callback outputs. Google federation and the Streamlit
 authorization-code session must be configured before starting the service. Until
 then, the Cognito app client has only the built-in provider enabled, public sign-up
@@ -73,4 +73,38 @@ provider configuration.
 The ECR repository refuses recursive deletion. Teardown must first retain or
 explicitly delete reviewed release images, then destroy the application stack.
 The bootstrap state bucket remains until all dependent state has been handled.
+
+## Delivery workflow
+
+The manually dispatched [AWS platform workflow](../../.github/workflows/aws-platform.yml)
+uses only protected GitHub environments and short-lived OIDC credentials. Configure
+the `AWS_ACCOUNT_ID` environment variable in both `learning-plan` and `learning`.
+Configure `OPENAI_API_KEY` as a secret only in `learning`; the deploy job writes it
+to the existing Secrets Manager container through an owner-readable temporary file
+and does not print it. Keep required reviewers and master-only deployment branches
+on both environments.
+
+Operations are deliberately separate:
+
+- `plan` reads remote state and renders a plan for a supplied image digest and task
+  count without changing AWS.
+- `provision` applies the stopped platform with the all-zero placeholder digest. It
+  creates the ECR repository and callback outputs but starts no task.
+- `deploy` builds the current commit as `git-<commit>`, reuses that immutable tag on
+  a retry, records the ECR digest, populates the runtime secret, and applies exactly
+  that digest with one task.
+- `rollback` verifies a supplied prior digest still exists, reapplies it, and waits
+  for ECS steady state. The ECS deployment circuit breaker also rolls back a failed
+  in-progress deployment to its last completed revision.
+- `stop` resolves the currently configured digest and applies a desired count of
+  zero while retaining the platform.
+- `destroy` requires the exact `destroy-support-desk` confirmation, renders the
+  destroy plan, deletes retained ECR images, and applies the plan. Image deletion is
+  irreversible. The seven-day Secrets Manager recovery window and bootstrap state
+  resources remain.
+
+Deploy and rollback finish with a non-billable HTTPS/Streamlit reachability smoke.
+That smoke does not authenticate, call FastAPI, or invoke a model. Google federation,
+the browser session, unauthorized API evidence, and the budgeted ask/draft journey
+must be completed before this slice can claim live verification.
 

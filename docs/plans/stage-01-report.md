@@ -263,5 +263,39 @@ service limits, immutable repository, exact image-digest construction, internal 
 disabled dynamic caching, closed public sign-up, and secret recovery window. The
 provider download was networked; validation and mocked tests made no AWS API calls.
 No platform plan was produced against the live account, and no application resource
-was provisioned. The next review unit is delivery operations and the missing browser
-authentication session needed for the live Cognito journey.
+was provisioned. Delivery operations are recorded below; the browser authentication
+session remains necessary for the live Cognito journey.
+
+### Delivery operations
+
+Local implementation on 2026-11-12 added a manually dispatched, environment-gated
+GitHub workflow for read-only planning, stopped-service provisioning, immutable
+commit-image deployment, prior-digest rollback, retained-platform stop, and confirmed
+teardown. It uses short-lived OIDC credentials and account checks. Deploy writes the
+GitHub environment's OpenAI credential to the pre-created Secrets Manager container
+without printing it; Terraform state still contains no secret value. Release tags
+are immutable and retries reuse the existing digest. Teardown requires an exact
+confirmation and explicitly deletes retained images before the non-force-deletable
+repository.
+
+The bootstrap roles now have separate read-only plan and enumerated apply policies.
+IAM role management remains restricted to the platform's task-role names; other
+platform APIs with no consistent resource-level authorization use explicit actions
+with the protected GitHub environment and provider account guard as controls. A local
+bootstrap apply is required before the workflow can use these permissions.
+
+A bounded standard-library deployment smoke checks the HTTPS entry point, exact
+Streamlit health body, and application root without authenticating or invoking a
+model. Deterministic tests cover healthy, unsafe-URL, unhealthy, and transport-failure
+paths. This does not satisfy the live authenticated journey or unauthorized API
+evidence. Google federation and browser token forwarding remain prerequisites to
+starting the service.
+
+Local verification passed Terraform formatting and validation for both stacks, two
+bootstrap mocked tests, two platform mocked tests, workflow YAML parsing, isort,
+Ruff, strict mypy across 59 files, all 83 deterministic tests, relative-link checks,
+and `git diff --check`. The required Black command identified the new smoke module
+for reformatting but reached the 30-second cap, so it was not retried; Ruff's
+Black-compatible formatter applied that change and the subsequent static checks
+passed. No workflow was dispatched and no live resource, secret, image, or state was
+changed during this unit.
