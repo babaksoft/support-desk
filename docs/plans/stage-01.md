@@ -15,7 +15,10 @@ Slice 1.3 reviewable application infrastructure and delivery operations are
 implemented and locally verified. The stopped application platform is provisioned
 in the approved account and region; post-apply checks show an active ECS service with
 zero tasks and an empty secret container. Browser session handling, Google federation,
-live deployment, smoke, rollback, and teardown remain pending.
+live deployment, smoke, rollback, and teardown remain pending. Browser session
+handling and its confidential runtime secrets are locally implemented and planned
+against the stopped stack. External Google setup is verified; the federation apply
+remains.
 
 ## Outcome and boundaries
 

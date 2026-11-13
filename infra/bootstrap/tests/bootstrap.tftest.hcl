@@ -77,6 +77,32 @@ run "creates_bounded_bootstrap_resources" {
   }
 
   assert {
+    condition = !contains(
+      jsondecode(aws_iam_role_policy.github_plan_platform.policy).Statement[0].Action,
+      "secretsmanager:GetSecretValue",
+    )
+    error_message = "Secret-value reads must not use the wildcard platform statement."
+  }
+
+  assert {
+    condition = (
+      jsondecode(aws_iam_role_policy.github_plan_platform.policy).Statement[1].Action == ["secretsmanager:GetSecretValue"] &&
+      jsondecode(aws_iam_role_policy.github_plan_platform.policy).Statement[1].Resource ==
+      "arn:aws:secretsmanager:us-east-1:123456789012:secret:support-desk/learning/streamlit-auth-*"
+    )
+    error_message = "The plan role may read only the Streamlit authentication secret value."
+  }
+
+  assert {
+    condition = (
+      jsondecode(aws_iam_role_policy.github_apply_platform.policy).Statement[1].Action == ["secretsmanager:GetSecretValue"] &&
+      jsondecode(aws_iam_role_policy.github_apply_platform.policy).Statement[1].Resource ==
+      "arn:aws:secretsmanager:us-east-1:123456789012:secret:support-desk/learning/streamlit-auth-*"
+    )
+    error_message = "The apply role may read only the Streamlit authentication secret value."
+  }
+
+  assert {
     condition = alltrue([
       for action in [
         "cognito-idp:GetUserPoolMfaConfig",
@@ -101,7 +127,7 @@ run "creates_bounded_bootstrap_resources" {
 
   assert {
     condition = (
-      jsondecode(aws_iam_role_policy.github_apply_platform.policy).Statement[1].Resource ==
+      jsondecode(aws_iam_role_policy.github_apply_platform.policy).Statement[2].Resource ==
       "arn:aws:iam::123456789012:role/support-desk-learning-*"
     )
     error_message = "Task-role management must stay scoped to the learning platform."
@@ -109,7 +135,7 @@ run "creates_bounded_bootstrap_resources" {
 
   assert {
     condition = toset(
-      jsondecode(aws_iam_role_policy.github_apply_platform.policy).Statement[2].Condition.StringEquals["iam:AWSServiceName"]
+      jsondecode(aws_iam_role_policy.github_apply_platform.policy).Statement[3].Condition.StringEquals["iam:AWSServiceName"]
       ) == toset([
         "ecs.amazonaws.com",
         "elasticloadbalancing.amazonaws.com",

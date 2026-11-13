@@ -327,3 +327,42 @@ running, and pending counts all zero. The Secrets Manager container reported zer
 versions, confirming that provisioning did not copy the OpenAI credential. No image
 was built, no model was invoked, and deploy, smoke, rollback, stop, and teardown
 evidence remain pending.
+
+### Federation preparation
+
+Local preparation on 2026-11-13 corrected the browser authorization-code boundary
+before starting a task. Streamlit's supported OIDC integration requires the exact
+`/oauth2callback` path and a confidential client, so the planned update replaces the
+transitional public Cognito client, enables only Google, and generates separate
+Cognito-client and identity-cookie secrets into encrypted remote state and a
+recoverable Secrets Manager value. The UI starts through a bounded wrapper that
+writes owner-only runtime OIDC settings, prompts for login, and forwards only the
+Cognito access token to the task-local API. Application authorization remains the
+`operators` group decision.
+
+Focused UI tests passed all 15 cases, and the complete deterministic suite passed all
+86 tests. isort, Ruff, and strict mypy passed. Black identified the new server wrapper
+for formatting before reaching its 30-second cap, so it was not retried; the compatible
+Ruff formatter applied the change and the subsequent static checks passed. Terraform
+format and validation passed, and both mocked platform tests passed after adding
+assertions for the callback, confidential client, Google-only provider, and secret recovery.
+A read-only live plan against the stopped stack proposed 6 additions, 2 in-place
+updates, and 3 replacements/deletions; it keeps the ECS desired count at zero and
+renders generated secret values only as sensitive. No plan was applied. The exact
+Google redirect URI remains
+`https://support-desk-509399640122.auth.us-east-1.amazoncognito.com/oauth2/idpresponse`.
+Manual configuration then created the Google web client and added Google to the
+existing Cognito user pool. Read-only verification reported provider type `Google`,
+scopes `openid email profile`, mappings for `email`, `email_verified`, and the
+automatic username mapping, plus Cognito's expected generated provider group. The
+separate `operators` group remains the application authorization boundary. The
+transitional app client still supports only `COGNITO` with the root callback, as
+expected before the reviewed stopped-stack apply. Verification queries selected
+only non-secret fields; the Google client secret remained in the provider consoles.
+
+Pre-commit review separated `secretsmanager:GetSecretValue` from the wildcard
+Terraform refresh actions and limited it to the generated Streamlit authentication
+secret ARN pattern for both GitHub roles. Three mocked bootstrap tests passed, and
+the live bootstrap plan proposed only two in-place policy updates with no additions
+or deletions. This preserves Terraform refresh while preventing either workflow role
+from reading unrelated account secret values through that permission.

@@ -38,3 +38,22 @@ resource "aws_secretsmanager_secret" "openai_api_key" {
   recovery_window_in_days = 7
 }
 
+resource "random_password" "streamlit_cookie" {
+  length  = 64
+  special = false
+}
+
+resource "aws_secretsmanager_secret" "streamlit_auth" {
+  name                    = "support-desk/learning/streamlit-auth"
+  description             = "Cognito client and cookie secrets for the temporary operator interface."
+  recovery_window_in_days = 7
+}
+
+resource "aws_secretsmanager_secret_version" "streamlit_auth" {
+  secret_id = aws_secretsmanager_secret.streamlit_auth.id
+  secret_string = jsonencode({
+    client_secret = aws_cognito_user_pool_client.operators.client_secret
+    cookie_secret = random_password.streamlit_cookie.result
+  })
+}
+
