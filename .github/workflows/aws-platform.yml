@@ -120,7 +120,7 @@ jobs:
         run: terraform -chdir=infra/platform show -no-color platform.tfplan
 
   operate:
-    name: ${{ inputs.operation }} platform
+    name: Apply platform operation
     if: inputs.operation != 'plan'
     needs: validate
     runs-on: ubuntu-latest
