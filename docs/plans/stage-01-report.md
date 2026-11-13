@@ -366,3 +366,66 @@ secret ARN pattern for both GitHub roles. Three mocked bootstrap tests passed, a
 the live bootstrap plan proposed only two in-place policy updates with no additions
 or deletions. This preserves Terraform refresh while preventing either workflow role
 from reading unrelated account secret values through that permission.
+
+### Live deployment and recovery
+
+The reviewed federation update and first baseline deployment completed on 2026-11-13.
+Baseline run `43452134530` deployed image
+`sha256:ac7ab818e2b82e436891b444848697ad44d4b034d1aad3b60f19f830635bba68`.
+The first authentication release reached a healthy task but its post-apply read failed
+because the apply role lacked scoped access to the generated Streamlit authentication
+secret. A saved bootstrap plan added `secretsmanager:GetSecretValue` only for that
+secret's ARN pattern to the plan and apply roles, with two in-place changes and no
+additions or deletions. Recovery run `43455587809` then deployed digest
+`sha256:1bfe212cf9420fb240ff95d2dfd59924ae604935474d393facf936a2bbf052ee`.
+
+Browser verification found two application-boundary defects. The UI launcher encoded
+Streamlit's repeatable `secrets.files` option as a JSON array, so the supported OIDC
+settings were not loaded and `st.user` lacked `is_logged_in`. A focused regression
+test now pins the exact CLI argument. The subsequent login redirect failed with
+`invalid_scope` because Streamlit requests `openid email profile` while the Cognito
+client allowed only `openid email`; Terraform now allows the required `profile`
+scope, with a mocked assertion. PRs 2 and 3 passed CI and deployed through runs
+`43457349437` and `43459705433`. Their immutable digests were respectively
+`sha256:8908b28c52a1600d7367e0e55fc6bce58dc7440703bd3cc6d6b4f803e133e449`
+and `sha256:8faea7d0c19c174a18c3375b50d15f1a60f269ea42e0957526d71314462c6aa5`.
+
+### Live verification, rollback, and teardown
+
+The authenticated browser journey first demonstrated application-owned authorization:
+the Google-federated actor without `operators` membership was rejected with
+`Operator access is required`, and no model request was made. After the same actor was
+added to the Cognito group, one explicitly initiated billable question asked how many
+members a Free workspace can have. The deployed application returned an unreviewed
+draft stating the five-member limit, including the owner and pending invitations,
+and displayed `BL-PLANS` version 1 as evidence. This verifies the intended login,
+access-token forwarding, API authorization, model/tool, and evidence-display path
+with synthetic product data.
+
+Sign-out retains one known interoperability limitation. Streamlit 1.63 clears its
+application cookies and then sends generic OIDC RP-initiated logout parameters to the
+discovered end-session endpoint. Amazon Cognito's
+[logout endpoint](https://docs.aws.amazon.com/cognito/latest/developerguide/logout-endpoint.html)
+instead requires its own `logout_uri` or authorization-request parameter set, and it
+does not sign the user out of a social identity provider. Cognito therefore displayed
+a required-parameters error after the local app session was cleared; a later fresh app
+session could reuse the remaining Cognito/Google session without showing Google again.
+This is not evidence of a failed application logout, but provider-level single sign-out
+is not delivered in this slice.
+
+Rollback run `43462838459` passed the public post-rollback smoke and restored the
+prior digest ending `e133e449` as ECS task-definition revision 6 while retaining the
+Cognito scope correction. Cost Explorer then reported an explicitly estimated,
+incomplete same-day view of USD 0.001688958 for EC2-related usage and USD 0.0000000495
+for EFS, with CloudWatch at zero; billing data can arrive later. The single browser
+model request did not expose token usage in the UI, so no unsupported inference-cost
+claim is recorded. The account budget alert and USD 10 experiment ceiling remained
+the spending controls.
+
+Confirmed teardown run `43464080681` passed in 15 minutes 52 seconds. It permanently
+removed the retained ECR images before destroying the platform. The remote platform
+state is empty; ECS reports the named cluster `INACTIVE`; the named CloudFront
+distribution, VPC, and ECR repository are absent. Both runtime secrets are scheduled
+for their recovery window. The encrypted Terraform state bucket and restricted GitHub
+OIDC bootstrap roles remain intentionally available for later slices. Slice 1.3 is
+complete.

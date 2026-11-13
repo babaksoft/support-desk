@@ -120,10 +120,12 @@ the API then verifies the RS256 signature, expiry, issuer, app client, access-to
 use, and group claims before the application authorizes the `operators` group.
 Health endpoints remain public. Reviewable Terraform and a protected manual delivery
 workflow define the Cognito and application infrastructure, immutable image delivery,
-rollback, stop, and teardown. The platform is provisioned in its stopped state with
-zero ECS tasks; no application image or OpenAI secret value has been deployed.
-Browser authorization-code handling is locally implemented and verified; live Google
-provider configuration is verified, while the stopped federation update remains pending.
+rollback, stop, and teardown. The temporary Slice 1.3 platform completed its live
+Google-federated operator journey, rollback demonstration, and confirmed teardown.
+The application resources and release images are no longer deployed; encrypted remote
+state and restricted GitHub OIDC bootstrap roles remain for later slices. Streamlit
+clears its application session on sign-out, but provider-level Cognito/Google single
+sign-out remains a documented interoperability limitation.
 
 Do not enable inference until a model and run budget are agreed. Export credentials
 through your shell's secret mechanism; keep them out of source and command history.

@@ -11,14 +11,12 @@ for Slice 1.2 is also complete. Detailed implementation and verification records
 are kept in the [Stage 1 report](stage-01-report.md). The breakdown below makes
 review units smaller while preserving the approved outcome and release gate.
 
-Slice 1.3 reviewable application infrastructure and delivery operations are
-implemented and locally verified. The stopped application platform is provisioned
-in the approved account and region; post-apply checks show an active ECS service with
-zero tasks and an empty secret container. Browser session handling, Google federation,
-live deployment, smoke, rollback, and teardown remain pending. Browser session
-handling and its confidential runtime secrets are locally implemented and planned
-against the stopped stack. External Google setup is verified; the federation apply
-remains.
+Slice 1.3 is complete. The protected workflow provisioned and deployed the application
+in the approved account and region. Live checks verified health, Google federation,
+unauthorized rejection, operator access, one grounded draft with displayed evidence,
+and immutable-digest rollback. The confirmed teardown removed the application stack
+and release images while retaining the bootstrap state and OIDC roles. Provider-level
+single sign-out remains a recorded Cognito/Streamlit interoperability limitation.
 
 ## Outcome and boundaries
 
@@ -131,7 +129,7 @@ include screenshots in review. Keep the first model run explicitly enabled.
 
 ## Slice 1.3: Deploy the question-answer journey
 
-**Status: In progress**
+**Status: Complete**
 
 Establish infrastructure as code, image build/push, GitHub OIDC, secrets, operator
 access, HTTPS, and ECS/Fargate deployment. Enforce authorization in application

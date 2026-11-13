@@ -20,13 +20,13 @@ with explicit local and Cognito adapters; deterministic authorized and unauthori
 checks pass. Reviewable application-platform Terraform now defines the network, ECR,
 stopped ECS service, internal ALB, CloudFront VPC origin, Cognito resources, runtime
 secret container, logs, and future PostgreSQL subnet group; local validation and two
-mocked tests pass. The protected workflow has provisioned this stack in `us-east-1`;
-the ECS service is active with zero desired, running, and pending tasks, and the
-secret container has no value version. The corrected confidential Cognito/Streamlit
-authorization-code boundary is locally implemented and its live stopped-stack plan
-is reviewed. External Google configuration is complete and verified. The stopped
-federation apply, live application deployment, smoke, rollback, and teardown remain
-pending. Preparation B is done:
+mocked tests pass. The protected workflow provisioned and deployed this stack in
+`us-east-1`. Live verification covered health, Google federation, unauthorized
+rejection, operator access, a grounded draft with displayed evidence,
+immutable-digest rollback, and confirmed teardown. The application stack and release
+images are removed; the bootstrap state and restricted OIDC roles remain. Cognito
+provider-level single sign-out is a recorded limitation. Slice 1.3 and Preparation B
+are done:
 Boardlight's initial reference pack and example questions are authored and checked.
 Plan implementation one stage
 at a time and update status only with verification evidence.
