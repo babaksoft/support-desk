@@ -20,9 +20,12 @@ with explicit local and Cognito adapters; deterministic authorized and unauthori
 checks pass. Reviewable application-platform Terraform now defines the network, ECR,
 stopped ECS service, internal ALB, CloudFront VPC origin, Cognito resources, runtime
 secret container, logs, and future PostgreSQL subnet group; local validation and two
-mocked tests pass, but none of these resources has been provisioned. The user reports
-all GitHub CI checks passed. Preparation B is done: Boardlight's initial reference
-pack and example questions are authored and checked. Plan implementation one stage
+mocked tests pass. The protected workflow has provisioned this stack in `us-east-1`;
+the ECS service is active with zero desired, running, and pending tasks, and the
+secret container has no value version. Live application deployment, Google
+federation, smoke, rollback, and teardown remain pending. Preparation B is done:
+Boardlight's initial reference pack and example questions are authored and checked.
+Plan implementation one stage
 at a time and update status only with verification evidence.
 
 Primary learning: AI Engineering foundations, agent frameworks, evaluation,

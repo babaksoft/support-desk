@@ -12,9 +12,10 @@ are kept in the [Stage 1 report](stage-01-report.md). The breakdown below makes
 review units smaller while preserving the approved outcome and release gate.
 
 Slice 1.3 reviewable application infrastructure and delivery operations are
-implemented and locally verified. No application-platform resource has been
-provisioned. Applying the expanded GitHub permissions, browser session handling,
-Google federation, live deployment, smoke, rollback, and teardown remain pending.
+implemented and locally verified. The stopped application platform is provisioned
+in the approved account and region; post-apply checks show an active ECS service with
+zero tasks and an empty secret container. Browser session handling, Google federation,
+live deployment, smoke, rollback, and teardown remain pending.
 
 ## Outcome and boundaries
 

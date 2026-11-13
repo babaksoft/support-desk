@@ -116,7 +116,8 @@ the API then verifies the RS256 signature, expiry, issuer, app client, access-to
 use, and group claims before the application authorizes the `operators` group.
 Health endpoints remain public. Reviewable Terraform and a protected manual delivery
 workflow define the Cognito and application infrastructure, immutable image delivery,
-rollback, stop, and teardown, but the platform has not been provisioned. Browser
+rollback, stop, and teardown. The platform is provisioned in its stopped state with
+zero ECS tasks; no application image or runtime secret has been deployed. Browser
 authorization-code session handling and Google federation remain pending.
 
 Do not enable inference until a model and run budget are agreed. Export credentials
@@ -223,7 +224,7 @@ checks.
 - [PLAN.md](PLAN.md): delivery stages and completion criteria.
 - [Stage 1](docs/plans/stage-01.md): walking-skeleton slices.
 - [Application platform](infra/platform/README.md): review and safety boundary for
-  the unprovisioned Slice 1.3 AWS stack and delivery operations.
+  the stopped Slice 1.3 AWS stack and delivery operations.
 - [Boardlight](docs/product/boardlight/README.md): product evidence and example questions.
 - [Decisions](docs/decisions/README.md): concise architectural decisions.
 - [Learning record](docs/learning/README.md): measured experiments and lessons.

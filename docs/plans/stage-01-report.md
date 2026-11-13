@@ -262,9 +262,10 @@ Two mocked tests passed, covering the subnet topology, stopped-by-default and on
 service limits, immutable repository, exact image-digest construction, internal ALB,
 disabled dynamic caching, closed public sign-up, and secret recovery window. The
 provider download was networked; validation and mocked tests made no AWS API calls.
-No platform plan was produced against the live account, and no application resource
-was provisioned. Delivery operations are recorded below; the browser authentication
-session remains necessary for the live Cognito journey.
+At this local implementation checkpoint, no platform plan had been produced against
+the live account and no application resource had been provisioned. Delivery
+operations are recorded below; the browser authentication session remains necessary
+for the live Cognito journey.
 
 ### Delivery operations
 
@@ -298,7 +299,7 @@ and `git diff --check`. The required Black command identified the new smoke modu
 for reformatting but reached the 30-second cap, so it was not retried; Ruff's
 Black-compatible formatter applied that change and the subsequent static checks
 passed. No workflow was dispatched and no live resource, secret, image, or state was
-changed during this unit.
+changed during that implementation unit.
 
 OIDC correction (2026-11-13): the first protected plan workflow reached AWS but STS
 rejected its web-identity token. CloudTrail showed that GitHub issued the repository's
@@ -306,4 +307,23 @@ new immutable subject format with numeric owner and repository IDs, while the ro
 trusted the legacy name-only subject. The bootstrap now validates and includes both
 public immutable IDs in the plan and apply trust policies. Mocked tests pin the exact
 repository-and-environment subjects and reject malformed IDs. Applying this correction
-must update only the two role trust policies before the workflow is retried.
+updated only the two role trust policies before the workflow was retried.
+
+### Live stopped-platform provision
+
+Live execution on 2026-11-13 used the approved existing account in `us-east-1` and
+the USD 10 experiment budget. The protected plan completed successfully before the
+provision operation. Initial applies exposed four AWS provider read calls missing
+from the least-privilege GitHub policies:
+`cognito-idp:GetUserPoolMfaConfig`, `ec2:GetSecurityGroupsForVpc`,
+`ecs:ListServiceDeployments`, and `ecs:DescribeServiceDeployments`. Each correction
+updated only the plan and apply inline policies, with `0` resources added and
+destroyed, and a mocked bootstrap assertion now covers all four actions.
+
+Recovery run `43402855195` completed the idempotent provision. Terraform reported one
+ECS service replacement while reconciling the partial state; the service never ran a
+task. A read-only post-apply check reported the service `ACTIVE` with desired,
+running, and pending counts all zero. The Secrets Manager container reported zero
+versions, confirming that provisioning did not copy the OpenAI credential. No image
+was built, no model was invoked, and deploy, smoke, rollback, stop, and teardown
+evidence remain pending.

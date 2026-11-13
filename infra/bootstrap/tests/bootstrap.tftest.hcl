@@ -77,6 +77,21 @@ run "creates_bounded_bootstrap_resources" {
   }
 
   assert {
+    condition = alltrue([
+      for action in [
+        "cognito-idp:GetUserPoolMfaConfig",
+        "ec2:GetSecurityGroupsForVpc",
+        "ecs:DescribeServiceDeployments",
+        "ecs:ListServiceDeployments",
+        ] : contains(
+        jsondecode(aws_iam_role_policy.github_plan_platform.policy).Statement[0].Action,
+        action,
+      )
+    ])
+    error_message = "Terraform refresh must include required Cognito, VPC, and ECS read permissions."
+  }
+
+  assert {
     condition = contains(
       jsondecode(aws_iam_role_policy.github_apply_platform.policy).Statement[0].Action,
       "ecr:PutImage",
@@ -96,9 +111,9 @@ run "creates_bounded_bootstrap_resources" {
     condition = toset(
       jsondecode(aws_iam_role_policy.github_apply_platform.policy).Statement[2].Condition.StringEquals["iam:AWSServiceName"]
       ) == toset([
-      "ecs.amazonaws.com",
-      "elasticloadbalancing.amazonaws.com",
-      "vpcorigin.cloudfront.amazonaws.com",
+        "ecs.amazonaws.com",
+        "elasticloadbalancing.amazonaws.com",
+        "vpcorigin.cloudfront.amazonaws.com",
     ])
     error_message = "Service-linked role creation must stay limited to required services."
   }
