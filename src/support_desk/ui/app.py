@@ -11,17 +11,23 @@ from support_desk.ui.client import (
 )
 
 
-def render_app(client: QuestionApi) -> None:
+def render_app(client: QuestionApi, operator_email: str | None = None) -> None:
     """Render the question form and latest unreviewed draft.
 
     Args:
         client:
             Typed question API client.
+        operator_email:
+            Authenticated operator email shown for session awareness.
     """
 
     st.set_page_config(page_title="Support Desk", page_icon="💬")
     st.title("Support Desk")
     st.caption("Draft Boardlight product guidance from authored evidence.")
+    if operator_email is not None:
+        st.sidebar.caption(f"Signed in as {operator_email}")
+        if st.sidebar.button("Sign out"):
+            st.logout()
 
     with st.form("question-form"):
         question = st.text_area(

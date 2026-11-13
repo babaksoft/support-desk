@@ -104,6 +104,10 @@ explicitly enabled.
 | `SUPPORT_DESK_AUTH_MODE` | `local` for loopback development or `cognito` for deployed token verification; defaults to `local` |
 | `SUPPORT_DESK_COGNITO_ISSUER` | Exact HTTPS Cognito user-pool issuer; required in `cognito` mode |
 | `SUPPORT_DESK_COGNITO_CLIENT_ID` | Cognito app client accepted by the API; required in `cognito` mode |
+| `SUPPORT_DESK_UI_AUTH_MODE` | `local` for the loopback UI or `cognito` for Streamlit OIDC login; defaults to `local` |
+| `SUPPORT_DESK_COGNITO_CLIENT_SECRET` | Confidential Cognito client secret supplied to the deployed UI from Secrets Manager |
+| `SUPPORT_DESK_SESSION_COOKIE_SECRET` | Streamlit identity-cookie signing secret supplied from Secrets Manager |
+| `SUPPORT_DESK_PUBLIC_URL` | Public deployed UI root used to construct the exact `/oauth2callback` URI |
 | `SUPPORT_DESK_OPERATOR_GROUP` | Cognito group authorized for operator use cases; defaults to `operators` |
 | `SUPPORT_DESK_ENABLE_INFERENCE` | Set exactly `1` to permit paid generation; unset or `0` disables it |
 | `SUPPORT_DESK_MODEL` | Explicit OpenAI Responses model ID; no default |
@@ -117,8 +121,9 @@ use, and group claims before the application authorizes the `operators` group.
 Health endpoints remain public. Reviewable Terraform and a protected manual delivery
 workflow define the Cognito and application infrastructure, immutable image delivery,
 rollback, stop, and teardown. The platform is provisioned in its stopped state with
-zero ECS tasks; no application image or runtime secret has been deployed. Browser
-authorization-code session handling and Google federation remain pending.
+zero ECS tasks; no application image or OpenAI secret value has been deployed.
+Browser authorization-code handling is locally implemented and verified; live Google
+provider configuration is verified, while the stopped federation update remains pending.
 
 Do not enable inference until a model and run budget are agreed. Export credentials
 through your shell's secret mechanism; keep them out of source and command history.

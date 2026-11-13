@@ -8,6 +8,14 @@ override_resource {
   }
 }
 
+override_resource {
+  target          = aws_cloudfront_distribution.application
+  override_during = plan
+  values = {
+    domain_name = "example.cloudfront.net"
+  }
+}
+
 run "builds_bounded_learning_platform" {
   command = plan
 
@@ -75,8 +83,28 @@ run "builds_bounded_learning_platform" {
   }
 
   assert {
+    condition     = aws_cognito_user_pool_client.operators.callback_urls == toset(["https://example.cloudfront.net/oauth2callback"])
+    error_message = "Cognito must return the authorization code to Streamlit's OIDC callback."
+  }
+
+  assert {
+    condition     = aws_cognito_user_pool_client.operators.generate_secret
+    error_message = "The server-side OIDC client must remain confidential."
+  }
+
+  assert {
+    condition     = aws_cognito_user_pool_client.operators.supported_identity_providers == toset(["Google"])
+    error_message = "Google must be the only enabled operator identity provider."
+  }
+
+  assert {
     condition     = aws_secretsmanager_secret.openai_api_key.recovery_window_in_days == 7
     error_message = "Secret deletion must retain the configured recovery window."
+  }
+
+  assert {
+    condition     = aws_secretsmanager_secret.streamlit_auth.recovery_window_in_days == 7
+    error_message = "OIDC secrets must retain the configured recovery window."
   }
 }
 

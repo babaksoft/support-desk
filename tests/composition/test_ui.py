@@ -15,7 +15,10 @@ def test_defaults_to_local_api(monkeypatch: pytest.MonkeyPatch) -> None:
     """
 
     monkeypatch.delenv("SUPPORT_DESK_API_URL", raising=False)
-    assert str(UiSettings.from_environment().api_url) == "http://127.0.0.1:8000/"
+    monkeypatch.delenv("SUPPORT_DESK_UI_AUTH_MODE", raising=False)
+    settings = UiSettings.from_environment()
+    assert str(settings.api_url) == "http://127.0.0.1:8000/"
+    assert settings.authentication_mode == "local"
 
 
 def test_reads_valid_api_url(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -41,3 +44,15 @@ def test_rejects_non_http_api_url(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("SUPPORT_DESK_API_URL", "api:8000")
     with pytest.raises(ValidationError):
         UiSettings.from_environment()
+
+
+def test_reads_cognito_authentication_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Enable the deployed browser login explicitly.
+
+    Args:
+        monkeypatch:
+            Pytest environment patching helper.
+    """
+
+    monkeypatch.setenv("SUPPORT_DESK_UI_AUTH_MODE", "cognito")
+    assert UiSettings.from_environment().authentication_mode == "cognito"

@@ -4,7 +4,7 @@ output "cloudfront_url" {
 }
 
 output "cognito_callback_url" {
-  description = "Exact application URL registered as the Cognito callback and sign-out URL."
+  description = "Exact Streamlit OIDC callback registered with Cognito."
   value       = local.cognito_callback_url
 }
 
@@ -19,7 +19,7 @@ output "cognito_issuer" {
 }
 
 output "cognito_user_pool_client_id" {
-  description = "Public app-client identifier used by the operator UI."
+  description = "Confidential app-client identifier used by the operator UI."
   value       = aws_cognito_user_pool_client.operators.id
 }
 
@@ -46,6 +46,11 @@ output "ecs_service_name" {
 output "openai_secret_arn" {
   description = "Secret destination that must receive the API key outside Terraform state."
   value       = aws_secretsmanager_secret.openai_api_key.arn
+}
+
+output "streamlit_auth_secret_arn" {
+  description = "Secret containing the generated confidential Streamlit OIDC settings."
+  value       = aws_secretsmanager_secret.streamlit_auth.arn
 }
 
 output "postgresql_subnet_group_name" {

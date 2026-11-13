@@ -1,7 +1,8 @@
 locals {
-  state_bucket_arn = aws_s3_bucket.terraform_state.arn
-  state_object_arn = "${local.state_bucket_arn}/${local.platform_state_key}"
-  lock_object_arn  = "${local.state_object_arn}.tflock"
+  state_bucket_arn          = aws_s3_bucket.terraform_state.arn
+  state_object_arn          = "${local.state_bucket_arn}/${local.platform_state_key}"
+  lock_object_arn           = "${local.state_object_arn}.tflock"
+  streamlit_auth_secret_arn = "arn:aws:secretsmanager:${var.aws_region}:${var.target_account_id}:secret:support-desk/learning/streamlit-auth-*"
 
   plan_state_policy = jsonencode({
     Version = "2012-10-17"
@@ -119,6 +120,12 @@ locals {
         Effect   = "Allow"
         Action   = local.platform_read_actions
         Resource = "*"
+      },
+      {
+        Sid      = "ReadStreamlitAuthSecretValue"
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue"]
+        Resource = local.streamlit_auth_secret_arn
       },
     ]
   })
@@ -238,6 +245,12 @@ locals {
           "secretsmanager:UpdateSecret",
         ])
         Resource = "*"
+      },
+      {
+        Sid      = "ReadStreamlitAuthSecretValue"
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue"]
+        Resource = local.streamlit_auth_secret_arn
       },
       {
         Sid    = "ManageLearningTaskRoles"

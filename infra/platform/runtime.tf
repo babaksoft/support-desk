@@ -26,16 +26,19 @@ resource "aws_iam_role_policy_attachment" "task_execution" {
 }
 
 resource "aws_iam_role_policy" "task_execution_secret" {
-  name = "support-desk-openai-secret"
+  name = "support-desk-runtime-secrets"
   role = aws_iam_role.task_execution.id
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Sid      = "ReadOpenAIKey"
-        Effect   = "Allow"
-        Action   = ["secretsmanager:GetSecretValue"]
-        Resource = aws_secretsmanager_secret.openai_api_key.arn
+        Sid    = "ReadRuntimeSecrets"
+        Effect = "Allow"
+        Action = ["secretsmanager:GetSecretValue"]
+        Resource = [
+          aws_secretsmanager_secret.openai_api_key.arn,
+          aws_secretsmanager_secret.streamlit_auth.arn,
+        ]
       },
     ]
   })
@@ -152,12 +155,9 @@ resource "aws_ecs_task_definition" "application" {
       cpu       = 256
       memory    = 512
       command = [
-        "/app/.venv/bin/streamlit",
-        "run",
-        "/app/src/support_desk/composition/ui.py",
-        "--server.address=0.0.0.0",
-        "--server.port=8501",
-        "--server.headless=true",
+        "/app/.venv/bin/python",
+        "-m",
+        "support_desk.composition.ui_server",
       ]
       portMappings = [
         {
@@ -168,6 +168,20 @@ resource "aws_ecs_task_definition" "application" {
       ]
       environment = [
         { name = "SUPPORT_DESK_API_URL", value = "http://127.0.0.1:8000" },
+        { name = "SUPPORT_DESK_COGNITO_CLIENT_ID", value = aws_cognito_user_pool_client.operators.id },
+        { name = "SUPPORT_DESK_COGNITO_ISSUER", value = "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.operators.id}" },
+        { name = "SUPPORT_DESK_PUBLIC_URL", value = local.cloudfront_url },
+        { name = "SUPPORT_DESK_UI_AUTH_MODE", value = "cognito" },
+      ]
+      secrets = [
+        {
+          name      = "SUPPORT_DESK_COGNITO_CLIENT_SECRET"
+          valueFrom = "${aws_secretsmanager_secret.streamlit_auth.arn}:client_secret::"
+        },
+        {
+          name      = "SUPPORT_DESK_SESSION_COOKIE_SECRET"
+          valueFrom = "${aws_secretsmanager_secret.streamlit_auth.arn}:cookie_secret::"
+        },
       ]
       dependsOn = [
         {

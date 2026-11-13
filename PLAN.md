@@ -22,8 +22,11 @@ stopped ECS service, internal ALB, CloudFront VPC origin, Cognito resources, run
 secret container, logs, and future PostgreSQL subnet group; local validation and two
 mocked tests pass. The protected workflow has provisioned this stack in `us-east-1`;
 the ECS service is active with zero desired, running, and pending tasks, and the
-secret container has no value version. Live application deployment, Google
-federation, smoke, rollback, and teardown remain pending. Preparation B is done:
+secret container has no value version. The corrected confidential Cognito/Streamlit
+authorization-code boundary is locally implemented and its live stopped-stack plan
+is reviewed. External Google configuration is complete and verified. The stopped
+federation apply, live application deployment, smoke, rollback, and teardown remain
+pending. Preparation B is done:
 Boardlight's initial reference pack and example questions are authored and checked.
 Plan implementation one stage
 at a time and update status only with verification evidence.

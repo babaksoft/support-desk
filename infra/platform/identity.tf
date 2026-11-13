@@ -37,10 +37,10 @@ resource "aws_cognito_user_pool_client" "operators" {
   allowed_oauth_flows_user_pool_client = true
   allowed_oauth_scopes                 = ["email", "openid"]
   callback_urls                        = [local.cognito_callback_url]
-  logout_urls                          = [local.cognito_callback_url]
-  generate_secret                      = false
+  logout_urls                          = [local.cognito_logout_url]
+  generate_secret                      = true
   prevent_user_existence_errors        = "ENABLED"
-  supported_identity_providers         = ["COGNITO"]
+  supported_identity_providers         = ["Google"]
 
   access_token_validity  = 60
   id_token_validity      = 60

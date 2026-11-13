@@ -3,8 +3,9 @@
 This stack defines the temporary Slice 1.3 application platform in `us-east-1`.
 It creates the network, immutable ECR repository, one stopped ECS/Fargate service,
 internal load balancer, CloudFront VPC origin, Cognito user pool, runtime secret
-container, log group, and private subnet group reserved for PostgreSQL. It does not
-configure Google, put a credential into the secret, push an image, or start a task.
+containers, log group, and private subnet group reserved for PostgreSQL. It does not
+create the external Google OAuth client, put an OpenAI credential into its secret,
+push an image, or start a task.
 
 ## Architecture and cost boundary
 
@@ -62,13 +63,26 @@ version, keeping the OpenAI key out of configuration and Terraform state. Delive
 operations will document a non-printing, explicitly approved way to populate it
 from the local smoke credential. Never pass the key as a Terraform variable.
 
-The first stopped-service `provision` operation produces the exact CloudFront application callback
-and Cognito Google callback outputs. Google federation and the Streamlit
-authorization-code session must be configured before starting the service. Until
-then, the Cognito app client has only the built-in provider enabled, public sign-up
-is disabled, and no application operator should be created. The later federation
-unit will enable Google as the operator identity provider and remove this transitional
-provider configuration.
+The first stopped-service `provision` operation produces the exact callbacks. Before
+applying the federation update, create a Google Auth Platform web client in testing
+mode with only the agreed test users and register the exact
+`cognito_google_callback_url` output as its authorized redirect URI. In the existing
+Cognito user pool, add Google with scopes `openid email profile`, map `email` and
+`email_verified`, and keep the Google client secret in Google and Cognito consoles;
+do not put it in source, Terraform inputs, or command output.
+
+The reviewed federation update replaces the transitional public Cognito client with
+a confidential client, registers the `cognito_callback_url` output ending in
+`/oauth2callback`, and enables only Google. Terraform generates the Cognito client
+secret and Streamlit cookie secret into encrypted remote state and a dedicated
+recoverable Secrets Manager value; neither is rendered by the plan. Streamlit keeps
+the authorization-code session and forwards only the Cognito access token to the
+task-local API. Public Cognito sign-up remains disabled.
+
+The first successful Google login creates the federated Cognito user. Add that exact
+user to the existing `operators` group, then sign out and back in so the new access
+token contains the authorization claim. Group membership, not the Google email
+address, grants application access.
 
 The ECR repository refuses recursive deletion. Teardown must first retain or
 explicitly delete reviewed release images, then destroy the application stack.
@@ -104,7 +118,7 @@ Operations are deliberately separate:
   resources remain.
 
 Deploy and rollback finish with a non-billable HTTPS/Streamlit reachability smoke.
-That smoke does not authenticate, call FastAPI, or invoke a model. Google federation,
-the browser session, unauthorized API evidence, and the budgeted ask/draft journey
-must be completed before this slice can claim live verification.
+That smoke does not authenticate, call FastAPI, or invoke a model. Live Google
+federation, browser-session evidence, unauthorized API evidence, and the budgeted
+ask/draft journey must be completed before this slice can claim live verification.
 
