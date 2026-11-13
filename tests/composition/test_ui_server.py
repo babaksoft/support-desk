@@ -5,7 +5,11 @@ from pathlib import Path
 
 import pytest
 
-from support_desk.composition.ui_server import OidcServerSettings, _write_secrets
+from support_desk.composition.ui_server import (
+    OidcServerSettings,
+    _streamlit_arguments,
+    _write_secrets,
+)
 
 
 def test_writes_owner_only_cognito_oidc_settings(tmp_path: Path) -> None:
@@ -61,3 +65,22 @@ def test_requires_complete_oidc_environment(monkeypatch: pytest.MonkeyPatch) -> 
 
     with pytest.raises(ValueError):
         OidcServerSettings.from_environment()
+
+
+def test_passes_runtime_secrets_as_one_streamlit_location() -> None:
+    """Pass the actual secrets path to Streamlit's multi-value CLI option."""
+
+    arguments = _streamlit_arguments(
+        "/app/.venv/bin/streamlit",
+        Path("/tmp/support-desk-streamlit-secrets.toml"),
+    )
+
+    assert arguments == [
+        "/app/.venv/bin/streamlit",
+        "run",
+        "/app/src/support_desk/composition/ui.py",
+        "--server.address=0.0.0.0",
+        "--server.port=8501",
+        "--server.headless=true",
+        "--secrets.files=/tmp/support-desk-streamlit-secrets.toml",
+    ]

@@ -71,15 +71,7 @@ def main() -> None:
     streamlit = "/app/.venv/bin/streamlit"
     os.execv(
         streamlit,
-        [
-            streamlit,
-            "run",
-            "/app/src/support_desk/composition/ui.py",
-            "--server.address=0.0.0.0",
-            "--server.port=8501",
-            "--server.headless=true",
-            f"--secrets.files={json.dumps([str(SECRETS_PATH)])}",
-        ],
+        _streamlit_arguments(streamlit, SECRETS_PATH),
     )
 
 
@@ -111,6 +103,30 @@ def _write_secrets(settings: OidcServerSettings, path: Path) -> None:
     descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
     with os.fdopen(descriptor, "w", encoding="utf-8") as secrets_file:
         secrets_file.write(content)
+
+
+def _streamlit_arguments(streamlit: str, secrets_path: Path) -> list[str]:
+    """Build the deployed Streamlit command arguments.
+
+    Args:
+        streamlit:
+            Absolute Streamlit executable path.
+        secrets_path:
+            Runtime OIDC settings file passed as one secrets location.
+
+    Returns:
+        Streamlit command arguments with the exact secrets file path.
+    """
+
+    return [
+        streamlit,
+        "run",
+        "/app/src/support_desk/composition/ui.py",
+        "--server.address=0.0.0.0",
+        "--server.port=8501",
+        "--server.headless=true",
+        f"--secrets.files={secrets_path}",
+    ]
 
 
 if __name__ == "__main__":
