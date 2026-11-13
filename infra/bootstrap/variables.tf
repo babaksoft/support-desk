@@ -31,10 +31,32 @@ variable "github_owner" {
   default     = "babaksoft"
 }
 
+variable "github_owner_id" {
+  description = "Immutable GitHub numeric ID for the repository owner."
+  type        = string
+  default     = "15974699"
+
+  validation {
+    condition     = can(regex("^[1-9][0-9]{0,19}$", var.github_owner_id))
+    error_message = "github_owner_id must be a positive GitHub numeric ID."
+  }
+}
+
 variable "github_repository" {
   description = "GitHub repository trusted to request AWS credentials."
   type        = string
   default     = "support-desk"
+}
+
+variable "github_repository_id" {
+  description = "Immutable GitHub numeric ID for the trusted repository."
+  type        = string
+  default     = "1449584851"
+
+  validation {
+    condition     = can(regex("^[1-9][0-9]{0,19}$", var.github_repository_id))
+    error_message = "github_repository_id must be a positive GitHub numeric ID."
+  }
 }
 
 variable "github_environment" {

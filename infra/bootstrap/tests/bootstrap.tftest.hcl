@@ -1,5 +1,13 @@
 mock_provider "aws" {}
 
+override_resource {
+  target          = aws_iam_openid_connect_provider.github
+  override_during = plan
+  values = {
+    arn = "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"
+  }
+}
+
 run "creates_bounded_bootstrap_resources" {
   command = plan
 
@@ -42,6 +50,22 @@ run "creates_bounded_bootstrap_resources" {
   assert {
     condition     = aws_iam_role.github_apply.name == "support-desk-github-apply"
     error_message = "The GitHub apply role must use the bounded project name."
+  }
+
+  assert {
+    condition = (
+      jsondecode(aws_iam_role.github_plan.assume_role_policy).Statement[0].Condition.StringEquals["token.actions.githubusercontent.com:sub"] ==
+      "repo:babaksoft@15974699/support-desk@1449584851:environment:learning-plan"
+    )
+    error_message = "The plan role must trust the immutable repository subject and plan environment."
+  }
+
+  assert {
+    condition = (
+      jsondecode(aws_iam_role.github_apply.assume_role_policy).Statement[0].Condition.StringEquals["token.actions.githubusercontent.com:sub"] ==
+      "repo:babaksoft@15974699/support-desk@1449584851:environment:learning"
+    )
+    error_message = "The apply role must trust the immutable repository subject and apply environment."
   }
 
   assert {
@@ -98,4 +122,16 @@ run "accepts_an_existing_github_provider" {
     condition     = length(aws_iam_openid_connect_provider.github) == 0
     error_message = "Bootstrap must not duplicate an existing account-level provider."
   }
+}
+
+run "rejects_invalid_immutable_github_ids" {
+  command = plan
+
+  variables {
+    target_account_id    = "123456789012"
+    github_owner_id      = "owner-id"
+    github_repository_id = "0"
+  }
+
+  expect_failures = [var.github_owner_id, var.github_repository_id]
 }

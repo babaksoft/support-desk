@@ -16,7 +16,7 @@ locals {
   github_oidc_provider_arn = var.create_github_oidc_provider ? (
     aws_iam_openid_connect_provider.github[0].arn
   ) : var.github_oidc_provider_arn
-  github_repository_subject = "repo:${var.github_owner}/${var.github_repository}"
+  github_repository_subject = "repo:${var.github_owner}@${var.github_owner_id}/${var.github_repository}@${var.github_repository_id}"
   platform_state_key        = "learning/platform.tfstate"
   state_bucket_name         = "support-desk-terraform-state-${var.target_account_id}"
 }

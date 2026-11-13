@@ -1,3 +1,5 @@
 # Copy this file to terraform.tfvars and replace the placeholder locally.
 # Never commit terraform.tfvars.
-target_account_id = "000000000000"
+target_account_id    = "000000000000"
+github_owner_id      = "15974699"
+github_repository_id = "1449584851"

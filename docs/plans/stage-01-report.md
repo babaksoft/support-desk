@@ -299,3 +299,11 @@ for reformatting but reached the 30-second cap, so it was not retried; Ruff's
 Black-compatible formatter applied that change and the subsequent static checks
 passed. No workflow was dispatched and no live resource, secret, image, or state was
 changed during this unit.
+
+OIDC correction (2026-11-13): the first protected plan workflow reached AWS but STS
+rejected its web-identity token. CloudTrail showed that GitHub issued the repository's
+new immutable subject format with numeric owner and repository IDs, while the role
+trusted the legacy name-only subject. The bootstrap now validates and includes both
+public immutable IDs in the plan and apply trust policies. Mocked tests pin the exact
+repository-and-environment subjects and reject malformed IDs. Applying this correction
+must update only the two role trust policies before the workflow is retried.

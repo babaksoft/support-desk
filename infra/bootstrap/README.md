@@ -9,9 +9,11 @@ It does not create the application network, runtime, authentication, or database
 - The local profile uses temporary IAM Identity Center credentials.
 - The S3 bucket blocks public access, rejects non-TLS access and SSE-C uploads,
   encrypts objects with SSE-S3, retains versions, and refuses recursive deletion.
-- GitHub trust is limited to `babaksoft/support-desk`. Only the protected
-  `learning-plan` environment may assume the state-reading plan role, and only the
-  protected `learning` environment may assume the apply role.
+- GitHub trust is limited to the immutable numeric identities for
+  `babaksoft/support-desk`, so namespace reuse cannot transfer access after an owner
+  or repository rename. Only the protected `learning-plan` environment may assume
+  the state-reading plan role, and only the protected `learning` environment may
+  assume the apply role.
 - The plan role can read only the state and application-platform resource types.
   The apply role has the explicit service actions needed to provision, deploy,
   roll back, stop, and tear down this learning platform. IAM mutation and
@@ -34,8 +36,18 @@ Authenticate without creating long-lived access keys:
 aws sso login --profile support-desk-bootstrap
 ```
 
-Copy `terraform.tfvars.example` to the ignored `terraform.tfvars` file and replace
-the placeholder with the target account ID. Do not commit that file.
+Copy `terraform.tfvars.example` to the ignored `terraform.tfvars` file, replace the
+target-account placeholder, and confirm the public immutable GitHub owner and
+repository IDs against the GitHub API. Do not commit that file.
+
+```bash
+gh api repos/babaksoft/support-desk \
+  --jq '{github_owner_id: (.owner.id | tostring), github_repository_id: (.id | tostring)}'
+```
+
+GitHub uses these IDs in the default OIDC subject for repositories created after
+July 15, 2026. AWS trust must match the complete immutable subject, including the
+protected environment name.
 
 Format and validate locally:
 
