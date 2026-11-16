@@ -45,3 +45,40 @@ jobs:
         run: uv sync --locked
       - name: Run ${{ matrix.check.name }}
         run: ${{ matrix.check.command }}
+
+  postgres-integration:
+    name: PostgreSQL integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17.12@sha256:0d938e975177bef9f1f61f3f9dbcf2e0aa0a139568f66d3415ed8892eb97f6ac
+        env:
+          POSTGRES_DB: support_desk_test
+          POSTGRES_PASSWORD: synthetic-test-password
+          POSTGRES_USER: support_desk
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U support_desk -d support_desk_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://support_desk:synthetic-test-password@127.0.0.1:5432/support_desk_test
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.12.7"
+          enable-cache: true
+      - name: Install Python
+        run: uv python install
+      - name: Install locked dependencies
+        run: uv sync --locked
+      - name: Run migration and repository tests
+        run: uv run --locked pytest -v tests/integration

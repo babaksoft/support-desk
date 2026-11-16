@@ -1,6 +1,6 @@
 # Support Desk Design
 
-Last updated: 2026-11-12
+Last updated: 2026-11-16
 
 ## Purpose and scope
 
@@ -108,6 +108,20 @@ Store source/configuration provenance sufficient to investigate generated result
 Do not hold database transactions open across model calls. Define failed-attempt,
 retry, and deduplication semantics before adding durable jobs. Container-local
 filesystems are not durable storage for application records.
+
+For question generation, a client submission UUID is the idempotency key. Repeating
+the same authenticated input returns its stored terminal outcome and does not call
+the model again; reusing the UUID for different input is rejected. Each initial
+submission creates an interaction and a started attempt before inference. Success,
+timeout, cancellation, and other generation failure are finalized afterward in a
+separate transaction. Stored failures contain a stable category rather than provider
+exception text. A retry uses a new submission UUID and explicitly names one failed,
+timed-out, or cancelled attempt; only one direct retry may name an attempt. It stays
+with the original interaction and records its own model identity and timestamps.
+
+Interactions and their attempts become deletion-eligible 30 days after the initial
+interaction is accepted. The repository exposes the purge operation; scheduling it
+and provisioning durable cloud PostgreSQL remain later delivery work.
 
 ## External interfaces and integrations
 

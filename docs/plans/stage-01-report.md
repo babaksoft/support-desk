@@ -429,3 +429,78 @@ distribution, VPC, and ECR repository are absent. Both runtime secrets are sched
 for their recovery window. The encrypted Terraform state bucket and restricted GitHub
 OIDC bootstrap roles remain intentionally available for later slices. Slice 1.3 is
 complete.
+
+## Slice 1.4
+
+### Persistence semantics and implementation
+
+Implementation record (2026-11-16): added domain-owned generation persistence
+contracts and a Db-prefixed async SQLAlchemy adapter. Each accepted initial request
+uses a client submission UUID to create one interaction and one started attempt in a
+short transaction. Inference runs after that transaction closes. A second transaction
+records `succeeded`, `failed`, `timed_out`, or `cancelled`; successful attempts retain
+the model identifier, draft, review state, and normalized evidence references, while
+failure records exclude provider exception text.
+
+An exact duplicate submission by the same authenticated actor replays its durable
+outcome without another model call. Reusing the UUID for different actor/input/retry
+fields is a conflict. An explicit retry has a new submission UUID, names one terminal
+failed, timed-out, or cancelled attempt, stays on the original interaction, and may be
+the only direct retry of that attempt. A later retry can name the latest failed
+attempt. Question text alone is not a deduplication key, so deliberate new submissions
+remain distinct potentially billable attempts.
+
+Interactions become purge-eligible 30 days after initial acceptance. The repository
+implements the purge operation, but no automatic scheduler is claimed. Durable cloud
+PostgreSQL provisioning and persisted-result browsing remain in Slice 1.5.
+
+The reviewed Alembic baseline creates interactions, attempts, and evidence with UUID
+keys, bounded authored fields, column comments, foreign keys, uniqueness constraints,
+outcome/result consistency checks, and retention indexes. Compose uses the pinned
+official PostgreSQL 17.12 image, applies migrations before API startup, keeps the
+database private to the Compose network, and retains data in a named volume. Runtime
+generation now requires an explicit `DATABASE_URL`. SQLAlchemy 2.1.8, psycopg 3.3.9,
+and Alembic 1.20.1 are locked. CI adds an explicit PostgreSQL service and separate
+migration/repository job; ordinary tests still skip integration checks when no
+`TEST_DATABASE_URL` is supplied.
+
+### Verification and learning conclusion
+
+A disposable PostgreSQL 17.12 container verified full upgrade, metadata/schema drift
+checking, downgrade to base, re-upgrade, normalized successful-draft replay, a
+concurrent duplicate race resolving to one attempt, failed-attempt and retry linkage,
+invalid retry rejection, and retention deletion. The final
+complete run passed all 95 tests with PostgreSQL enabled. isort, Ruff, strict mypy,
+lock consistency, Compose configuration, source/wheel builds, relative-link checks,
+and `git diff --check` passed. Alembic offline SQL generation also completed.
+
+The required Black check identified four files but exited at the 30-second cap. It
+was not retried, in accordance with repository policy. Ruff's compatible formatter
+applied exactly those mechanical changes; Black remains incomplete for this slice's
+local verification rather than being reported as a formatting failure.
+
+The evidence supports the hypothesis that durable admission plus separate terminal
+finalization makes nondeterministic failures explainable without holding a database
+transaction across the model call. Idempotency is an authenticated request property,
+while explicit retry linkage preserves the provenance of deliberate repeated work.
+See the [learning record](../learning/slice-1.4.md). Slice 1.4 is complete.
+
+Implementation and verification record (2026-11-16): a submission UUID now provides
+idempotency per authenticated request; exact repeats replay the stored outcome without
+another model call, conflicting reuse is rejected, and retries use a new submission
+UUID linked to one failed, timed-out, or cancelled attempt. PostgreSQL stores model,
+time, outcome, draft, and evidence provenance but not provider exception text. The
+application creates and finalizes attempts in separate transactions around inference.
+Interactions become purge-eligible after 30 days.
+
+SQLAlchemy 2.1.8, psycopg 3.3.9, Alembic 1.20.1, a reviewed baseline, Compose
+PostgreSQL 17.12, and a dedicated CI service implement the slice. The disposable
+database tests exercised upgrade, schema/metadata comparison, downgrade, re-upgrade,
+success replay, a concurrent duplicate race, failure/retry linkage, invalid retry
+rejection, and retention purge.
+All 95 tests passed with PostgreSQL enabled; isort, Ruff, strict mypy, lock consistency,
+Compose validation, package builds, and documentation/link checks passed. Black found
+four files to reformat but reached its required 30-second cap; the compatible formatter
+applied those changes, and Black was not retried after timeout. See the
+[implementation report](stage-01-report.md#slice-14) and
+[learning conclusion](../learning/slice-1.4.md).
