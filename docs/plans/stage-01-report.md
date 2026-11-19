@@ -464,6 +464,14 @@ and Alembic 1.20.1 are locked. CI adds an explicit PostgreSQL service and separa
 migration/repository job; ordinary tests still skip integration checks when no
 `TEST_DATABASE_URL` is supplied.
 
+Organization revision (2026-11-16): grouped the persistence foundation under
+`support_desk.infrastructure.db`, with separate factory, shared metadata, interaction
+mapping, generation-attempt mappings, and repository modules. The package boundaries
+export composition-facing factories and the Db-prefixed repository while keeping
+mapping ownership explicit. [ADR 0005](../decisions/0005-persist-generation-attempts-around-model-calls.md)
+records the durable transaction, idempotency, retry, failure-data, and retention
+choices independently of this module layout.
+
 ### Verification and learning conclusion
 
 A disposable PostgreSQL 17.12 container verified full upgrade, metadata/schema drift

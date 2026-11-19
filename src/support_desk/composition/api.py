@@ -1,6 +1,8 @@
 """Configure the local API process from explicit provider settings."""
 
 import os
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from typing import Literal, Self
 
 from fastapi import FastAPI
@@ -14,6 +16,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from support_desk.api import create_app
 from support_desk.application import AnswerService, OperatorAuthorizer
@@ -22,6 +25,11 @@ from support_desk.infrastructure import (
     AgentsAnswerGenerator,
     CognitoAccessTokenAuthenticator,
     LocalOperatorAuthenticator,
+)
+from support_desk.infrastructure.db import (
+    DbGenerationRepository,
+    create_database_engine,
+    create_session_factory,
 )
 
 
@@ -187,6 +195,40 @@ class InferenceSettings(BaseModel):
         )
 
 
+class DatabaseSettings(BaseModel):
+    """Configure durable PostgreSQL persistence.
+
+    Attributes:
+        url:
+            SQLAlchemy PostgreSQL connection URL.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid", str_strip_whitespace=True)
+
+    url: SecretStr = Field(
+        description="SQLAlchemy PostgreSQL connection URL.",
+        repr=False,
+    )
+
+    @classmethod
+    def from_environment(cls) -> Self:
+        """Read and validate database settings from the environment.
+
+        Returns:
+            Validated database settings.
+
+        Raises:
+            ValueError:
+                The database URL is absent.
+        """
+
+        url = os.environ.get("DATABASE_URL", "").strip()
+        if not url:
+            raise ValueError("DATABASE_URL is required when inference is enabled.")
+
+        return cls.model_validate({"url": url})
+
+
 def build_app() -> FastAPI:
     """Build an API with optional, explicitly enabled inference.
 
@@ -205,14 +247,21 @@ def build_app() -> FastAPI:
             operator_authorizer=authorizer,
         )
 
+    database = DatabaseSettings.from_environment()
+    engine = create_database_engine(database.url.get_secret_value())
+    repository = DbGenerationRepository(create_session_factory(engine))
     client = AsyncOpenAI(
         api_key=inference.api_key.get_secret_value(), max_retries=0, timeout=40
     )
-    service = AnswerService(AgentsAnswerGenerator(client, inference.model))
+    service = AnswerService(
+        AgentsAnswerGenerator(client, inference.model),
+        repository,
+        inference.model,
+    )
 
     return create_app(
         service,
-        managed_resources=(client,),
+        managed_resources=(client, _manage_database_engine(engine)),
         authenticator=authenticator,
         operator_authorizer=authorizer,
     )
@@ -240,3 +289,23 @@ def _build_authenticator(
         issuer=str(settings.issuer),
         client_id=settings.client_id,
     )
+
+
+@asynccontextmanager
+async def _manage_database_engine(
+    engine: AsyncEngine,
+) -> AsyncGenerator[AsyncEngine]:
+    """Dispose the database connection pool during application shutdown.
+
+    Args:
+        engine:
+            Application-owned asynchronous database engine.
+
+    Yields:
+        Engine retained for the application lifetime.
+    """
+
+    try:
+        yield engine
+    finally:
+        await engine.dispose()

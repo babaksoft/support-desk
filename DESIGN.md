@@ -121,7 +121,8 @@ with the original interaction and records its own model identity and timestamps.
 
 Interactions and their attempts become deletion-eligible 30 days after the initial
 interaction is accepted. The repository exposes the purge operation; scheduling it
-and provisioning durable cloud PostgreSQL remain later delivery work.
+and provisioning durable cloud PostgreSQL remain later delivery work. See
+[ADR 0005](docs/decisions/0005-persist-generation-attempts-around-model-calls.md).
 
 ## External interfaces and integrations
 

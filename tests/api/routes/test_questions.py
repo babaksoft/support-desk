@@ -11,8 +11,28 @@ from fastapi.testclient import TestClient
 from support_desk.api import create_app
 from support_desk.api.schemas import AnswerRequest
 from support_desk.application import AnswerService, GenerationBusy
-from support_desk.domain import AnswerDraft
+from support_desk.domain import AnswerDraft, GenerationAdmission, GenerationRequest
 from support_desk.infrastructure import LocalOperatorAuthenticator
+from tests.fakes import FakeGenerationRepository, build_answer_service
+
+
+class _FailingGenerationRepository(FakeGenerationRepository):
+    """Simulate unavailable durable storage."""
+
+    async def begin_attempt(self, request: GenerationRequest) -> GenerationAdmission:
+        """Fail before an attempt can be admitted.
+
+        Args:
+            request:
+                Generation request that cannot be stored.
+
+        Raises:
+            RuntimeError:
+                Every persistence operation fails.
+        """
+
+        del request
+        raise RuntimeError("private-database-detail")
 
 
 def test_returns_unreviewed_draft(draft: AnswerDraft) -> None:
@@ -25,7 +45,7 @@ def test_returns_unreviewed_draft(draft: AnswerDraft) -> None:
 
     generator = AsyncMock()
     generator.generate.return_value = draft
-    with TestClient(_create_test_app(AnswerService(generator))) as client:
+    with TestClient(_create_test_app(build_answer_service(generator))) as client:
         response = client.post("/questions", json={"question": " How many boards? "})
         assert response.status_code == 200
         assert response.json() == draft.model_dump(mode="json")
@@ -42,7 +62,7 @@ def test_rejects_invalid_question(question: str) -> None:
     """
 
     generator = AsyncMock()
-    with TestClient(_create_test_app(AnswerService(generator))) as client:
+    with TestClient(_create_test_app(build_answer_service(generator))) as client:
         assert client.post("/questions", json={"question": question}).status_code == 422
     generator.generate.assert_not_awaited()
 
@@ -77,6 +97,23 @@ def test_unconfigured_api_rejects_generation() -> None:
         }
 
 
+def test_sanitizes_persistence_failure() -> None:
+    """Return a safe dependency failure when durable admission fails."""
+
+    service = build_answer_service(
+        AsyncMock(), repository=_FailingGenerationRepository()
+    )
+    with TestClient(_create_test_app(service)) as client:
+        response = client.post("/questions", json={"question": "Hi"})
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "code": "persistence_unavailable",
+        "message": "Durable generation storage is unavailable.",
+    }
+    assert "private-database-detail" not in response.text
+
+
 def test_reports_busy_generation_with_retry_guidance() -> None:
     """Return a stable busy response and retry delay."""
 
@@ -108,7 +145,7 @@ def test_sanitizes_generation_failures(failure: Exception, status: int) -> None:
 
     generator = AsyncMock()
     generator.generate.side_effect = failure
-    with TestClient(_create_test_app(AnswerService(generator))) as client:
+    with TestClient(_create_test_app(build_answer_service(generator))) as client:
         response = client.post("/questions", json={"question": "Hi"})
         assert response.status_code == status
         assert response.json()["code"] in {
@@ -130,7 +167,7 @@ def test_deadline_releases_generation_slot(draft: AnswerDraft) -> None:
 
     generator.generate.side_effect = partial(_slow_generate, draft)
     with TestClient(
-        _create_test_app(AnswerService(generator, timeout_seconds=0.01))
+        _create_test_app(build_answer_service(generator, timeout_seconds=0.01))
     ) as client:
         assert client.post("/questions", json={"question": "Hi"}).status_code == 504
         generator.generate.side_effect = None
@@ -151,18 +188,28 @@ async def test_rejects_concurrent_generation(draft: AnswerDraft) -> None:
 
     generator = AsyncMock()
     generator.generate.side_effect = partial(_blocking_generate, started, draft)
-    service = AnswerService(generator)
+    service = build_answer_service(generator)
     request = AnswerRequest(question="Hi")
-    task = asyncio.create_task(service.execute(request.question))
+    task = asyncio.create_task(
+        service.execute(request.question, "test-operator", request.submission_id)
+    )
     await started.wait()
     with pytest.raises(GenerationBusy):
-        await service.execute(request.question)
+        await service.execute(request.question, "test-operator", request.submission_id)
     task.cancel()
     with pytest.raises(asyncio.CancelledError):
         await task
     generator.generate.side_effect = None
     generator.generate.return_value = draft
-    assert await service.execute(request.question) == draft
+    next_request = AnswerRequest(question="Hi")
+    assert (
+        await service.execute(
+            next_request.question,
+            "test-operator",
+            next_request.submission_id,
+        )
+        == draft
+    )
 
 
 async def _slow_generate(draft: AnswerDraft, question: str) -> AnswerDraft:

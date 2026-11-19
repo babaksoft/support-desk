@@ -6,6 +6,7 @@ from pytest import MonkeyPatch
 
 from support_desk.composition.api import (
     AuthenticationSettings,
+    DatabaseSettings,
     InferenceSettings,
     build_app,
 )
@@ -93,6 +94,9 @@ def test_builds_enabled_api_without_contacting_provider(
     monkeypatch.setenv("SUPPORT_DESK_ENABLE_INFERENCE", "1")
     monkeypatch.setenv("SUPPORT_DESK_MODEL", "synthetic-model")
     monkeypatch.setenv("OPENAI_API_KEY", "synthetic-key")
+    monkeypatch.setenv(
+        "DATABASE_URL", "postgresql+psycopg://synthetic:synthetic@localhost/test"
+    )
 
     settings = InferenceSettings.from_environment()
     assert settings.enabled is True
@@ -100,6 +104,21 @@ def test_builds_enabled_api_without_contacting_provider(
     assert "synthetic-key" not in repr(settings)
     with TestClient(build_app()) as client:
         assert client.get("/health/ready").status_code == 200
+
+
+def test_requires_database_when_inference_is_enabled(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Reject enabled durable generation without a database destination.
+
+    Args:
+        monkeypatch:
+            Environment isolation fixture.
+    """
+
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    with pytest.raises(ValueError, match="DATABASE_URL is required"):
+        DatabaseSettings.from_environment()
 
 
 def test_defaults_to_explicit_local_authentication(

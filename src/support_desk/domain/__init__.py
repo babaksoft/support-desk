@@ -6,13 +6,27 @@ from support_desk.domain.identity import (
     AccessTokenRejected,
     AuthenticatedActor,
 )
+from support_desk.domain.interactions import (
+    AttemptOutcome,
+    DuplicateSubmissionConflict,
+    GenerationAdmission,
+    GenerationRepository,
+    GenerationRequest,
+    InvalidGenerationRetry,
+)
 
 __all__ = [
     "AccessTokenAuthenticator",
     "AccessTokenRejected",
     "AnswerDraft",
     "AnswerGenerator",
+    "AttemptOutcome",
     "AuthenticatedActor",
+    "DuplicateSubmissionConflict",
     "Evidence",
+    "GenerationAdmission",
+    "GenerationRepository",
+    "GenerationRequest",
+    "InvalidGenerationRetry",
     "SourceId",
 ]

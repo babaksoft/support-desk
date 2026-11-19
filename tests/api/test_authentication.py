@@ -5,12 +5,12 @@ from unittest.mock import AsyncMock
 from fastapi.testclient import TestClient
 
 from support_desk.api import create_app
-from support_desk.application import AnswerService
 from support_desk.domain import (
     AccessTokenRejected,
     AnswerDraft,
     AuthenticatedActor,
 )
+from tests.fakes import build_answer_service
 
 
 class _StaticAuthenticator:
@@ -63,7 +63,7 @@ class _RejectingAuthenticator:
 def test_fails_closed_without_authentication_configuration() -> None:
     """Reject question access when no authenticator is configured."""
 
-    with TestClient(create_app(AnswerService(AsyncMock()))) as client:
+    with TestClient(create_app(build_answer_service(AsyncMock()))) as client:
         response = client.post("/questions", json={"question": "Hi"})
 
     assert response.status_code == 503
@@ -78,7 +78,7 @@ def test_rejects_missing_or_invalid_access_token() -> None:
 
     with TestClient(
         create_app(
-            AnswerService(AsyncMock()),
+            build_answer_service(AsyncMock()),
             authenticator=_RejectingAuthenticator(),
         )
     ) as client:
@@ -102,7 +102,7 @@ def test_rejects_authenticated_actor_outside_operator_group() -> None:
         )
     )
     with TestClient(
-        create_app(AnswerService(AsyncMock()), authenticator=authenticator)
+        create_app(build_answer_service(AsyncMock()), authenticator=authenticator)
     ) as client:
         response = client.post(
             "/questions",
@@ -136,7 +136,7 @@ def test_allows_authenticated_operator(
         )
     )
     with TestClient(
-        create_app(AnswerService(generator), authenticator=authenticator)
+        create_app(build_answer_service(generator), authenticator=authenticator)
     ) as client:
         response = client.post(
             "/questions",

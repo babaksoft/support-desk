@@ -8,6 +8,9 @@ from support_desk.application.authorization import (
 from support_desk.application.errors import (
     GenerationBusy,
     GenerationFailed,
+    GenerationPersistenceFailed,
+    GenerationRetryRejected,
+    GenerationSubmissionConflict,
     GenerationTimedOut,
 )
 
@@ -15,6 +18,9 @@ __all__ = [
     "AnswerService",
     "GenerationBusy",
     "GenerationFailed",
+    "GenerationPersistenceFailed",
+    "GenerationRetryRejected",
+    "GenerationSubmissionConflict",
     "GenerationTimedOut",
     "OperatorAccessDenied",
     "OperatorAuthorizer",

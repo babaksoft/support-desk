@@ -5,8 +5,8 @@ from unittest.mock import AsyncMock
 from fastapi.testclient import TestClient
 
 from support_desk.api import create_app
-from support_desk.application import AnswerService
 from support_desk.infrastructure import LocalOperatorAuthenticator
+from tests.fakes import build_answer_service
 
 
 def test_configured_api_is_live_and_ready() -> None:
@@ -14,7 +14,7 @@ def test_configured_api_is_live_and_ready() -> None:
 
     with TestClient(
         create_app(
-            AnswerService(AsyncMock()),
+            build_answer_service(AsyncMock()),
             authenticator=LocalOperatorAuthenticator("operators"),
         )
     ) as client:
