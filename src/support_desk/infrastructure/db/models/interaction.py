@@ -40,25 +40,25 @@ class DbInteraction(DbBase):
     id: Mapped[UUID] = mapped_column(
         Uuid,
         primary_key=True,
-        doc="Stable support-interaction identity.",
+        comment="Stable support-interaction identity.",
     )
     operator_subject: Mapped[str] = mapped_column(
         String(256),
         index=True,
-        doc="Authenticated operator identity that owns the interaction.",
+        comment="Authenticated operator identity that owns the interaction.",
     )
     question: Mapped[str] = mapped_column(
         String(2048),
-        doc="Operator-authored product question.",
+        comment="Operator-authored product question.",
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        doc="Time the interaction was accepted.",
+        comment="Time the interaction was accepted.",
     )
     expires_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         index=True,
-        doc="Time the interaction becomes eligible for deletion.",
+        comment="Time the interaction becomes eligible for deletion.",
     )
 
     attempts: Mapped[list[DbGenerationAttempt]] = relationship(
