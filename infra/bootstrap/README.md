@@ -22,6 +22,10 @@ It does not create the application network, runtime, authentication, or database
   uses `Resource = "*"` for its enumerated platform actions; the protected
   environment and account guard remain material controls.
 
+The platform policy scopes Route 53 writes to the Support Desk A alias and
+ACM validation CNAME in the existing `babaksoft.dev` zone. Review and update the
+bootstrap policy before planning the HTTPS platform through GitHub.
+
 Configure required reviewers and restrict deployment branches on the GitHub
 `learning-plan` and `learning` environments before any workflow uses either role.
 The AWS trust policy checks environment names but cannot configure GitHub's

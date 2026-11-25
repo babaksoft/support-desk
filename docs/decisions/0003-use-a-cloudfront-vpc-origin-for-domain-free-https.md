@@ -1,6 +1,6 @@
 # ADR 0003: Use a CloudFront VPC origin for domain-free HTTPS
 
-**Status:** Accepted
+**Status:** Superseded by [ADR 0006](0006-serve-the-application-through-a-public-https-load-balancer.md)
 
 ## Context
 

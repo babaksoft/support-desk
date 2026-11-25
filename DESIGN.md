@@ -1,6 +1,6 @@
 # Support Desk Design
 
-Last updated: 2026-11-16
+Last updated: 2026-11-25
 
 ## Purpose and scope
 
@@ -134,11 +134,11 @@ LLM traces; Prometheus and Grafana supply operational metrics and dashboards.
 
 Docker Compose provides local composition. GitHub Actions provides CI/CD through
 repository-scoped AWS OIDC roles. Terraform manages the AWS infrastructure. The
-cloud target is one Amazon ECS/Fargate service using immutable ECR images. CloudFront
-provides the AWS-generated public HTTPS endpoint and reaches an internal Application
-Load Balancer in private origin subnets through a VPC origin. The task uses separate
-public application subnets and an assigned public address for bounded outbound access
-without a NAT gateway. Cognito federates Google identities; FastAPI enforces
+cloud target is one Amazon ECS/Fargate service using immutable ECR images. Route 53
+points the application subdomain to a public Application Load Balancer. The load
+balancer terminates HTTPS with an ACM certificate and forwards traffic to Streamlit.
+The task uses public application subnets and an assigned public address for bounded
+outbound access without a NAT gateway. Cognito federates Google identities; FastAPI enforces
 operator-group authorization. Private database subnets reserve the later RDS
 PostgreSQL destination. Specific versions and model identifiers are verified during
 implementation rather than fixed by this design.

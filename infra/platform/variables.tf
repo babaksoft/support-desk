@@ -35,7 +35,7 @@ variable "aws_region" {
 }
 
 variable "availability_zone_ids" {
-  description = "Two stable us-east-1 zone IDs supported by CloudFront VPC origins."
+  description = "Two stable us-east-1 zone IDs for the application subnets."
   type        = list(string)
   default     = ["use1-az1", "use1-az2"]
   nullable    = false
@@ -46,10 +46,10 @@ variable "availability_zone_ids" {
       length(distinct(var.availability_zone_ids)) == 2 &&
       alltrue([
         for zone_id in var.availability_zone_ids :
-        can(regex("^use1-az[1-6]$", zone_id)) && zone_id != "use1-az3"
+        can(regex("^use1-az[1-6]$", zone_id))
       ])
     )
-    error_message = "Set two distinct supported us-east-1 zone IDs; use1-az3 is unsupported."
+    error_message = "Set two distinct us-east-1 zone IDs."
   }
 }
 
@@ -88,3 +88,17 @@ variable "service_desired_count" {
   }
 }
 
+
+variable "application_hostname" {
+  description = "Public hostname served by the application load balancer."
+  type        = string
+  default     = "support-desk.babaksoft.dev"
+  nullable    = false
+}
+
+variable "hosted_zone_id" {
+  description = "Existing public Route 53 hosted zone containing the application hostname."
+  type        = string
+  default     = "Z04852851BZAUX5QYP8JA"
+  nullable    = false
+}

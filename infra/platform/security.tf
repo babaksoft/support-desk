@@ -1,10 +1,6 @@
-data "aws_ec2_managed_prefix_list" "cloudfront_origin_facing" {
-  name = "com.amazonaws.global.cloudfront.origin-facing"
-}
-
 resource "aws_security_group" "load_balancer" {
   name        = "${local.name}-load-balancer"
-  description = "Accepts HTTP only from CloudFront origin-facing addresses."
+  description = "Accepts public HTTPS traffic."
   vpc_id      = aws_vpc.application.id
 
   tags = {
@@ -12,13 +8,13 @@ resource "aws_security_group" "load_balancer" {
   }
 }
 
-resource "aws_vpc_security_group_ingress_rule" "cloudfront_to_load_balancer" {
-  description       = "CloudFront VPC-origin HTTP traffic."
-  from_port         = 80
+resource "aws_vpc_security_group_ingress_rule" "https_to_load_balancer" {
+  description       = "Public HTTPS traffic."
+  from_port         = 443
   ip_protocol       = "tcp"
-  prefix_list_id    = data.aws_ec2_managed_prefix_list.cloudfront_origin_facing.id
+  cidr_ipv4         = "0.0.0.0/0"
   security_group_id = aws_security_group.load_balancer.id
-  to_port           = 80
+  to_port           = 443
 }
 
 resource "aws_vpc_security_group_egress_rule" "load_balancer_to_ui" {
@@ -32,7 +28,7 @@ resource "aws_vpc_security_group_egress_rule" "load_balancer_to_ui" {
 
 resource "aws_security_group" "task" {
   name        = "${local.name}-task"
-  description = "Accepts Streamlit traffic only from the internal load balancer."
+  description = "Accepts Streamlit traffic only from the public load balancer."
   vpc_id      = aws_vpc.application.id
 
   tags = {
@@ -41,7 +37,7 @@ resource "aws_security_group" "task" {
 }
 
 resource "aws_vpc_security_group_ingress_rule" "load_balancer_to_task" {
-  description                  = "Streamlit traffic from the internal load balancer."
+  description                  = "Streamlit traffic from the public load balancer."
   from_port                    = 8501
   ip_protocol                  = "tcp"
   referenced_security_group_id = aws_security_group.load_balancer.id

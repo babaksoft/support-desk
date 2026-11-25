@@ -8,14 +8,6 @@ override_resource {
   }
 }
 
-override_resource {
-  target          = aws_cloudfront_distribution.application
-  override_during = plan
-  values = {
-    domain_name = "example.cloudfront.net"
-  }
-}
-
 run "builds_bounded_learning_platform" {
   command = plan
 
@@ -30,8 +22,8 @@ run "builds_bounded_learning_platform" {
   }
 
   assert {
-    condition     = length(aws_subnet.application) == 6
-    error_message = "Origin, application, and future database tiers need two subnets each."
+    condition     = length(aws_subnet.application) == 4
+    error_message = "Application and future database tiers need two subnets each."
   }
 
   assert {
@@ -68,13 +60,23 @@ run "builds_bounded_learning_platform" {
   }
 
   assert {
-    condition     = aws_lb.application.internal
-    error_message = "The load balancer must remain internal behind the CloudFront VPC origin."
+    condition     = !aws_lb.application.internal
+    error_message = "The load balancer must accept public traffic."
   }
 
   assert {
-    condition     = aws_cloudfront_cache_policy.dynamic.default_ttl == 0
-    error_message = "Authenticated application traffic must not be cached."
+    condition     = aws_lb_listener.https.protocol == "HTTPS" && aws_lb_listener.https.port == 443
+    error_message = "The load balancer must serve HTTPS on port 443."
+  }
+
+  assert {
+    condition = (
+      aws_route53_record.application.zone_id == var.hosted_zone_id &&
+      aws_route53_record.application.name == "support-desk.babaksoft.dev" &&
+      aws_route53_record.application.type == "A" &&
+      aws_acm_certificate.application.domain_name == aws_route53_record.application.name
+    )
+    error_message = "The app alias and certificate must use the Support Desk hostname in the shared public zone."
   }
 
   assert {
@@ -83,7 +85,7 @@ run "builds_bounded_learning_platform" {
   }
 
   assert {
-    condition     = aws_cognito_user_pool_client.operators.callback_urls == toset(["https://example.cloudfront.net/oauth2callback"])
+    condition     = aws_cognito_user_pool_client.operators.callback_urls == toset(["https://support-desk.babaksoft.dev/oauth2callback"])
     error_message = "Cognito must return the authorization code to Streamlit's OIDC callback."
   }
 
