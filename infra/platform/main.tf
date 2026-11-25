@@ -14,19 +14,14 @@ provider "aws" {
 
 locals {
   name                  = "support-desk-learning"
-  cloudfront_origin_id  = "support-desk-streamlit"
-  cloudfront_url        = "https://${aws_cloudfront_distribution.application.domain_name}"
-  cognito_callback_url  = "${local.cloudfront_url}/oauth2callback"
-  cognito_logout_url    = "${local.cloudfront_url}/"
+  public_url            = "https://${var.application_hostname}"
+  cognito_callback_url  = "${local.public_url}/oauth2callback"
+  cognito_logout_url    = "${local.public_url}/"
   cognito_domain_prefix = "support-desk-${var.target_account_id}"
   image_uri             = "${aws_ecr_repository.application.repository_url}@${var.image_digest}"
   operator_group        = "operators"
 
   subnet_tiers = {
-    origin = {
-      cidrs  = ["10.32.0.0/24", "10.32.1.0/24"]
-      public = false
-    }
     application = {
       cidrs  = ["10.32.16.0/24", "10.32.17.0/24"]
       public = true

@@ -126,7 +126,7 @@ resource "aws_ecs_task_definition" "application" {
       secrets = [
         {
           name      = "OPENAI_API_KEY"
-          valueFrom = aws_secretsmanager_secret.openai_api_key.arn
+          valueFrom = "${aws_secretsmanager_secret.openai_api_key.arn}:OPENAI_API_KEY::"
         },
       ]
       healthCheck = {
@@ -170,7 +170,7 @@ resource "aws_ecs_task_definition" "application" {
         { name = "SUPPORT_DESK_API_URL", value = "http://127.0.0.1:8000" },
         { name = "SUPPORT_DESK_COGNITO_CLIENT_ID", value = aws_cognito_user_pool_client.operators.id },
         { name = "SUPPORT_DESK_COGNITO_ISSUER", value = "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.operators.id}" },
-        { name = "SUPPORT_DESK_PUBLIC_URL", value = local.cloudfront_url },
+        { name = "SUPPORT_DESK_PUBLIC_URL", value = local.public_url },
         { name = "SUPPORT_DESK_UI_AUTH_MODE", value = "cognito" },
       ]
       secrets = [
@@ -203,14 +203,14 @@ resource "aws_ecs_task_definition" "application" {
 
 resource "aws_lb" "application" {
   name                       = "support-desk-learning"
-  internal                   = true
+  internal                   = false
   load_balancer_type         = "application"
   security_groups            = [aws_security_group.load_balancer.id]
   drop_invalid_header_fields = true
   enable_deletion_protection = false
   subnets = [
-    aws_subnet.application["origin-1"].id,
-    aws_subnet.application["origin-2"].id,
+    aws_subnet.application["application-1"].id,
+    aws_subnet.application["application-2"].id,
   ]
 }
 
@@ -236,10 +236,12 @@ resource "aws_lb_target_group" "ui" {
   }
 }
 
-resource "aws_lb_listener" "http" {
+resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.application.arn
-  port              = 80
-  protocol          = "HTTP"
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+  certificate_arn   = aws_acm_certificate_validation.application.certificate_arn
 
   default_action {
     type             = "forward"
@@ -284,7 +286,7 @@ resource "aws_ecs_service" "application" {
     aws_ecs_cluster_capacity_providers.application,
     aws_iam_role_policy_attachment.task_execution,
     aws_iam_role_policy.task_execution_secret,
-    aws_lb_listener.http,
+    aws_lb_listener.https,
   ]
 }
 

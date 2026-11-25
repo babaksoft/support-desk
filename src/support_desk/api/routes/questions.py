@@ -10,6 +10,9 @@ from support_desk.api.schemas import AnswerRequest, ErrorResponse
 from support_desk.application import (
     GenerationBusy,
     GenerationFailed,
+    GenerationPersistenceFailed,
+    GenerationRetryRejected,
+    GenerationSubmissionConflict,
     GenerationTimedOut,
 )
 from support_desk.domain import AnswerDraft, AuthenticatedActor
@@ -24,6 +27,7 @@ router = APIRouter(tags=["questions"])
         401: {"model": ErrorResponse},
         413: {"model": ErrorResponse},
         403: {"model": ErrorResponse},
+        409: {"model": ErrorResponse},
         429: {"model": ErrorResponse},
         502: {"model": ErrorResponse},
         503: {"model": ErrorResponse},
@@ -54,10 +58,14 @@ async def answer(
             Authentication, authorization, or generation fails.
     """
 
-    del operator
     service = require_generation(request)
     try:
-        return await service.execute(question.question)
+        return await service.execute(
+            question.question,
+            operator.subject,
+            question.submission_id,
+            question.retry_of_attempt_id,
+        )
     except GenerationBusy as exc:
         raise ApiError(
             status_code=429,
@@ -76,4 +84,22 @@ async def answer(
             status_code=502,
             code="generation_failed",
             message="Generation failed; please retry explicitly.",
+        ) from exc
+    except GenerationSubmissionConflict as exc:
+        raise ApiError(
+            status_code=409,
+            code="submission_conflict",
+            message="Submission ID was already used for different input.",
+        ) from exc
+    except GenerationRetryRejected as exc:
+        raise ApiError(
+            status_code=409,
+            code="retry_rejected",
+            message="Retry target is not an eligible failed attempt.",
+        ) from exc
+    except GenerationPersistenceFailed as exc:
+        raise ApiError(
+            status_code=503,
+            code="persistence_unavailable",
+            message="Durable generation storage is unavailable.",
         ) from exc

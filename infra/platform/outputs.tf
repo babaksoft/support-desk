@@ -1,6 +1,6 @@
-output "cloudfront_url" {
+output "public_url" {
   description = "Public HTTPS entry point for the temporary learning deployment."
-  value       = local.cloudfront_url
+  value       = local.public_url
 }
 
 output "cognito_callback_url" {

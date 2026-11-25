@@ -18,6 +18,13 @@ and immutable-digest rollback. The confirmed teardown removed the application st
 and release images while retaining the bootstrap state and OIDC roles. Provider-level
 single sign-out remains a recorded Cognito/Streamlit interoperability limitation.
 
+Slice 1.4 is complete. PostgreSQL now records interactions and generation attempts
+through short SQLAlchemy transactions around, rather than across, model inference.
+The reviewed Alembic baseline, local Compose database, idempotency and explicit retry
+semantics, 30-day purge eligibility, and CI PostgreSQL job are implemented. Disposable
+PostgreSQL migration/repository tests and the complete deterministic suite pass. Cloud
+database provisioning remains correctly scoped to Slice 1.5.
+
 ## Outcome and boundaries
 
 An operator asks about a fictional SaaS product, receives an evidence-based draft,
@@ -146,6 +153,8 @@ Verification: unauthorized requests fail; live ask/draft journey, health checks,
 smoke test, and rollback demonstration pass. Record remaining deployment limitations.
 
 ## Slice 1.4: Persist interactions and generation attempts
+
+**Status: Complete**
 
 Define saved success/failure data, retry identity, duplicate-submission behavior,
 and retention. Add repository contracts, Db-prefixed SQLAlchemy adapters, a reviewed

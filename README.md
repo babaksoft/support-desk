@@ -9,7 +9,8 @@ guidance through an OpenAI Agents SDK reference-lookup tool. It displays an
 unreviewed answer with versioned evidence or an explicit evidence gap. Deterministic
 tests exercise the UI, API, and real SDK loop with synthetic provider responses. A
 bounded paid smoke verified live inference, including one recorded semantic citation
-limitation. There is no configured cloud deployment.
+limitation. When inference is enabled, PostgreSQL records interactions and safe
+generation-attempt outcomes. There is no configured cloud deployment.
 
 ## Capabilities
 
@@ -17,6 +18,8 @@ limitation. There is no configured cloud deployment.
 - `GET /health/live`: process liveness; `GET /health/ready`: local configuration readiness.
 - Streamlit question form with draft, evidence, and safe failure displays.
 - Application-enforced operator authorization with local and Cognito adapters.
+- Durable PostgreSQL interactions, generation provenance, idempotent submissions,
+  explicit retry linkage, and safe failure categories.
 - Packaged Boardlight v1 evidence, also included in the wheel and container.
 
 ## Product scope
@@ -29,14 +32,18 @@ Support Desk has four intended use cases: answer a product question,
 investigate an account issue, review and resolve a case, and propose a knowledge
 improvement. Support responses and knowledge proposals require operator review.
 This increment covers general product guidance using authored documentation.
-Account tools, persistence, and case workflows remain planned.
+Account tools, saved-interaction browsing, and case workflows remain planned.
 
 ## Data and cloud usage
 
 Model inference and model-based evaluations may transmit selected inputs to cloud
 providers and incur charges. AWS deployment incurs infrastructure charges.
 SDK tracing is disabled per run, including sensitive trace content. No telemetry
-exporter or application record storage is configured. The OpenAI Responses request
+exporter is configured. PostgreSQL stores the authenticated subject, question,
+submission/retry identities, model identifier, timestamps, safe outcome, and a
+successful draft with evidence. It does not store provider exception text or
+credentials. Interactions become purge-eligible after 30 days; automatic purge
+scheduling is not yet configured. The OpenAI Responses request
 sets `store=False`; this does not establish provider-side zero retention. Inference
 sends the question, instructions, output schema, and selected evidence to OpenAI.
 Use authored questions only. Local telemetry does not imply local inference.
@@ -52,6 +59,7 @@ responsibilities and the planned production stack are recorded in [DESIGN.md](DE
 
 Streamlit and HTTPX implement the operator client. FastAPI, Starlette, Pydantic,
 PyJWT, Uvicorn, OpenAI Agents SDK, and the OpenAI client implement the current API.
+PostgreSQL, SQLAlchemy's async API, psycopg, and Alembic implement persistence.
 Starlette supplies ASGI types and response primitives for the bounded request
 middleware. Python 3.12 and uv manage the package and locked dependencies. Black
 and isort format code; Ruff checks lint, annotations, and Google-style docstrings;
@@ -112,6 +120,7 @@ explicitly enabled.
 | `SUPPORT_DESK_ENABLE_INFERENCE` | Set exactly `1` to permit paid generation; unset or `0` disables it |
 | `SUPPORT_DESK_MODEL` | Explicit OpenAI Responses model ID; no default |
 | `OPENAI_API_KEY` | Provider credential, required when enabling inference |
+| `DATABASE_URL` | SQLAlchemy PostgreSQL URL; required when enabling inference |
 | `SUPPORT_DESK_API_URL` | Streamlit API root; defaults to `http://127.0.0.1:8000` |
 
 `local` authentication creates a synthetic operator and is allowed only for the
@@ -190,10 +199,12 @@ configuration and login arrive with the Slice 1.3 infrastructure.
 SUPPORT_DESK_ENABLE_INFERENCE=0 SUPPORT_DESK_MODEL= OPENAI_API_KEY= docker compose --env-file /dev/null up --build
 ```
 
-Compose starts the non-root API on `127.0.0.1:8000`, waits for its liveness check,
-and then starts Streamlit on `127.0.0.1:8501`. Both services have health checks.
-This command explicitly disables inference and ignores local dotenv files. No
-database or volume is needed. Stop the services with `docker compose down`.
+Compose starts PostgreSQL, applies the reviewed Alembic migration, starts the
+non-root API on `127.0.0.1:8000`, waits for its liveness check, and then starts
+Streamlit on `127.0.0.1:8501`. The database is not exposed to the host. Its named
+volume persists across normal restarts. This command explicitly disables inference
+and ignores local dotenv files. Stop the services with `docker compose down`.
+Deleting the database volume with `docker compose down --volumes` is destructive.
 
 **Networked, billable, data-sharing:** after agreeing a new run budget, the same
 stack can load the ignored mode-`600` smoke settings explicitly with
@@ -202,7 +213,24 @@ new paid attempt under the limits described above.
 
 ## Database management
 
-This increment stores no interactions. PostgreSQL and migrations arrive in Slice 1.4.
+Set `DATABASE_URL` to an explicitly chosen PostgreSQL database, then apply the
+reviewed schema history:
+
+```bash
+uv run alembic upgrade head
+```
+
+The application does not create tables at startup. Alembic migration `20261116_01`
+creates interactions, generation attempts, and normalized evidence references.
+Repository operations use separate transactions before and after model inference.
+
+**Destructive:** `uv run alembic downgrade base` removes all application tables and
+their data. Use it only against a disposable database. The integration suite requires
+an explicit disposable `TEST_DATABASE_URL`; without it, those tests skip:
+
+```bash
+TEST_DATABASE_URL=postgresql+psycopg://... uv run pytest -v tests/integration
+```
 
 ## Development checks
 

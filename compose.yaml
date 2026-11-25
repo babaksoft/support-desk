@@ -1,7 +1,34 @@
 services:
+  database:
+    image: postgres:17.12@sha256:0d938e975177bef9f1f61f3f9dbcf2e0aa0a139568f66d3415ed8892eb97f6ac
+    environment:
+      POSTGRES_DB: support_desk
+      POSTGRES_PASSWORD: synthetic-local-password
+      POSTGRES_USER: support_desk
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U support_desk -d support_desk"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - support-desk-postgres:/var/lib/postgresql/data
+
+  migrate:
+    build: .
+    command: ["/app/.venv/bin/alembic", "upgrade", "head"]
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://support_desk:synthetic-local-password@database/support_desk
+
   api:
     build: .
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     environment:
+      DATABASE_URL: postgresql+psycopg://support_desk:synthetic-local-password@database/support_desk
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       SUPPORT_DESK_AUTH_MODE: local
       SUPPORT_DESK_ENABLE_INFERENCE: ${SUPPORT_DESK_ENABLE_INFERENCE:-0}
@@ -35,3 +62,6 @@ services:
       start_period: 10s
     ports:
       - "127.0.0.1:8501:8501"
+
+volumes:
+  support-desk-postgres:

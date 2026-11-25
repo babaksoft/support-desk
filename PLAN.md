@@ -26,7 +26,12 @@ rejection, operator access, a grounded draft with displayed evidence,
 immutable-digest rollback, and confirmed teardown. The application stack and release
 images are removed; the bootstrap state and restricted OIDC roles remain. Cognito
 provider-level single sign-out is a recorded limitation. Slice 1.3 and Preparation B
-are done:
+are done. Slice 1.4 is also done: local PostgreSQL persistence records interactions,
+successful drafts, safe failure outcomes, model/evidence provenance, idempotent
+submissions, and explicit retry linkage through a reviewed Alembic baseline and
+short SQLAlchemy transactions. Disposable migration/repository tests and CI database
+orchestration are in place; cloud PostgreSQL provisioning remains in Slice 1.5.
+Preparation B is done:
 Boardlight's initial reference pack and example questions are authored and checked.
 Plan implementation one stage
 at a time and update status only with verification evidence.

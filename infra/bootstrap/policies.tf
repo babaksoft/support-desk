@@ -68,13 +68,24 @@ locals {
     ]
   })
 
+  application_hostname = "support-desk.babaksoft.dev"
+  hosted_zone_arn      = "arn:aws:route53:::hostedzone/Z04852851BZAUX5QYP8JA"
+  certificate_arn      = "arn:aws:acm:us-east-1:${var.target_account_id}:certificate/*"
+
+  platform_dns_read_statements = [
+    {
+      Effect   = "Allow"
+      Action   = ["acm:DescribeCertificate", "acm:ListTagsForCertificate"]
+      Resource = local.certificate_arn
+    },
+    {
+      Effect   = "Allow"
+      Action   = ["route53:GetHostedZone", "route53:ListResourceRecordSets"]
+      Resource = local.hosted_zone_arn
+    },
+  ]
+
   platform_read_actions = [
-    "cloudfront:GetCachePolicy",
-    "cloudfront:GetDistribution",
-    "cloudfront:GetDistributionConfig",
-    "cloudfront:GetOriginRequestPolicy",
-    "cloudfront:GetVpcOrigin",
-    "cloudfront:ListTagsForResource",
     "cognito-idp:DescribeUserPool",
     "cognito-idp:DescribeUserPoolClient",
     "cognito-idp:DescribeUserPoolDomain",
@@ -82,7 +93,6 @@ locals {
     "cognito-idp:GetUserPoolMfaConfig",
     "cognito-idp:ListTagsForResource",
     "ec2:Describe*",
-    "ec2:GetManagedPrefixListEntries",
     "ec2:GetSecurityGroupsForVpc",
     "ecr:DescribeImages",
     "ecr:DescribeRepositories",
@@ -114,7 +124,7 @@ locals {
 
   plan_platform_policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
+    Statement = concat([
       {
         Sid      = "ReadLearningPlatform"
         Effect   = "Allow"
@@ -127,30 +137,16 @@ locals {
         Action   = ["secretsmanager:GetSecretValue"]
         Resource = local.streamlit_auth_secret_arn
       },
-    ]
+    ], local.platform_dns_read_statements)
   })
 
   apply_platform_policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
+    Statement = concat([
       {
         Sid    = "ManageLearningPlatform"
         Effect = "Allow"
         Action = concat(local.platform_read_actions, [
-          "cloudfront:CreateCachePolicy",
-          "cloudfront:CreateDistribution",
-          "cloudfront:CreateOriginRequestPolicy",
-          "cloudfront:CreateVpcOrigin",
-          "cloudfront:DeleteCachePolicy",
-          "cloudfront:DeleteDistribution",
-          "cloudfront:DeleteOriginRequestPolicy",
-          "cloudfront:DeleteVpcOrigin",
-          "cloudfront:TagResource",
-          "cloudfront:UntagResource",
-          "cloudfront:UpdateCachePolicy",
-          "cloudfront:UpdateDistribution",
-          "cloudfront:UpdateOriginRequestPolicy",
-          "cloudfront:UpdateVpcOrigin",
           "cognito-idp:CreateGroup",
           "cognito-idp:CreateUserPool",
           "cognito-idp:CreateUserPoolClient",
@@ -222,6 +218,7 @@ locals {
           "elasticloadbalancing:DeleteListener",
           "elasticloadbalancing:DeleteLoadBalancer",
           "elasticloadbalancing:DeleteTargetGroup",
+          "elasticloadbalancing:ModifyListener",
           "elasticloadbalancing:ModifyLoadBalancerAttributes",
           "elasticloadbalancing:ModifyTargetGroup",
           "elasticloadbalancing:ModifyTargetGroupAttributes",
@@ -277,18 +274,63 @@ locals {
         Resource = [
           "arn:aws:iam::${var.target_account_id}:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS*",
           "arn:aws:iam::${var.target_account_id}:role/aws-service-role/elasticloadbalancing.amazonaws.com/AWSServiceRoleForElasticLoadBalancing*",
-          "arn:aws:iam::${var.target_account_id}:role/aws-service-role/vpcorigin.cloudfront.amazonaws.com/AWSServiceRoleForCloudFrontVPCOrigin*",
         ]
         Condition = {
           StringEquals = {
             "iam:AWSServiceName" = [
               "ecs.amazonaws.com",
               "elasticloadbalancing.amazonaws.com",
-              "vpcorigin.cloudfront.amazonaws.com",
             ]
           }
         }
       },
-    ]
+      {
+        Effect   = "Allow"
+        Action   = ["acm:RequestCertificate"]
+        Resource = "*"
+        Condition = {
+          "ForAllValues:StringEquals" = {
+            "acm:DomainNames" = [local.application_hostname]
+          }
+          StringEquals = {
+            "aws:RequestedRegion" = "us-east-1"
+          }
+        }
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["acm:AddTagsToCertificate", "acm:DeleteCertificate", "acm:RemoveTagsFromCertificate", "acm:UpdateCertificateOptions"]
+        Resource = local.certificate_arn
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["route53:GetChange"]
+        Resource = "arn:aws:route53:::change/*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["route53:ChangeResourceRecordSets"]
+        Resource = local.hosted_zone_arn
+        Condition = {
+          "ForAllValues:StringEquals" = {
+            "route53:ChangeResourceRecordSetsNormalizedRecordNames" = [local.application_hostname]
+            "route53:ChangeResourceRecordSetsRecordTypes"           = ["A"]
+          }
+        }
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["route53:ChangeResourceRecordSets"]
+        Resource = local.hosted_zone_arn
+        Condition = {
+          "ForAllValues:StringLike" = {
+            "route53:ChangeResourceRecordSetsNormalizedRecordNames" = ["_*.${local.application_hostname}"]
+          }
+          "ForAllValues:StringEquals" = {
+            "route53:ChangeResourceRecordSetsRecordTypes" = ["CNAME"]
+          }
+        }
+      },
+    ], local.platform_dns_read_statements)
   })
 }

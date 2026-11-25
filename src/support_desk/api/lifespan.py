@@ -22,7 +22,7 @@ class ApiLifespan:
         self._resources = tuple(resources)
 
     @asynccontextmanager
-    async def __call__(self, app: FastAPI) -> AsyncGenerator[None]:
+    async def __call__(self, app: FastAPI) -> AsyncGenerator[None, None]:
         """Enter resources and release them in reverse order.
 
         Args:

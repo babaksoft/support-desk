@@ -139,7 +139,6 @@ run "creates_bounded_bootstrap_resources" {
       ) == toset([
         "ecs.amazonaws.com",
         "elasticloadbalancing.amazonaws.com",
-        "vpcorigin.cloudfront.amazonaws.com",
     ])
     error_message = "Service-linked role creation must stay limited to required services."
   }

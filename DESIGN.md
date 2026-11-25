@@ -1,6 +1,6 @@
 # Support Desk Design
 
-Last updated: 2026-11-12
+Last updated: 2026-11-25
 
 ## Purpose and scope
 
@@ -109,6 +109,21 @@ Do not hold database transactions open across model calls. Define failed-attempt
 retry, and deduplication semantics before adding durable jobs. Container-local
 filesystems are not durable storage for application records.
 
+For question generation, a client submission UUID is the idempotency key. Repeating
+the same authenticated input returns its stored terminal outcome and does not call
+the model again; reusing the UUID for different input is rejected. Each initial
+submission creates an interaction and a started attempt before inference. Success,
+timeout, cancellation, and other generation failure are finalized afterward in a
+separate transaction. Stored failures contain a stable category rather than provider
+exception text. A retry uses a new submission UUID and explicitly names one failed,
+timed-out, or cancelled attempt; only one direct retry may name an attempt. It stays
+with the original interaction and records its own model identity and timestamps.
+
+Interactions and their attempts become deletion-eligible 30 days after the initial
+interaction is accepted. The repository exposes the purge operation; scheduling it
+and provisioning durable cloud PostgreSQL remain later delivery work. See
+[ADR 0005](docs/decisions/0005-persist-generation-attempts-around-model-calls.md).
+
 ## External interfaces and integrations
 
 FastAPI provides typed application interfaces; Streamlit is the operator client.
@@ -119,11 +134,11 @@ LLM traces; Prometheus and Grafana supply operational metrics and dashboards.
 
 Docker Compose provides local composition. GitHub Actions provides CI/CD through
 repository-scoped AWS OIDC roles. Terraform manages the AWS infrastructure. The
-cloud target is one Amazon ECS/Fargate service using immutable ECR images. CloudFront
-provides the AWS-generated public HTTPS endpoint and reaches an internal Application
-Load Balancer in private origin subnets through a VPC origin. The task uses separate
-public application subnets and an assigned public address for bounded outbound access
-without a NAT gateway. Cognito federates Google identities; FastAPI enforces
+cloud target is one Amazon ECS/Fargate service using immutable ECR images. Route 53
+points the application subdomain to a public Application Load Balancer. The load
+balancer terminates HTTPS with an ACM certificate and forwards traffic to Streamlit.
+The task uses public application subnets and an assigned public address for bounded
+outbound access without a NAT gateway. Cognito federates Google identities; FastAPI enforces
 operator-group authorization. Private database subnets reserve the later RDS
 PostgreSQL destination. Specific versions and model identifiers are verified during
 implementation rather than fixed by this design.

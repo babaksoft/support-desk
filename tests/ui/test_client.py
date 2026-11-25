@@ -1,9 +1,11 @@
 """Verify the typed FastAPI question client."""
 
 from collections.abc import Callable
+from uuid import UUID
 
 import httpx
 import pytest
+from pydantic import TypeAdapter
 
 from support_desk.domain import AnswerDraft
 from support_desk.ui import (
@@ -34,14 +36,15 @@ def test_returns_typed_draft(
     result = HttpQuestionClient("http://api:8000/").ask("How many boards?")
 
     assert result == draft
-    assert post == [
-        (
-            "http://api:8000/questions",
-            {"question": "How many boards?"},
-            {},
-            50.0,
-        )
-    ]
+    assert len(post) == 1
+    url, payload, headers, timeout = post[0]
+    assert url == "http://api:8000/questions"
+    assert isinstance(payload, dict)
+    assert payload["question"] == "How many boards?"
+    TypeAdapter(UUID).validate_python(payload["submission_id"])
+    assert payload["retry_of_attempt_id"] is None
+    assert headers == {}
+    assert timeout == 50.0
 
 
 def test_sends_operator_access_token(

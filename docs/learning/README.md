@@ -10,3 +10,4 @@ knowledge. This directory is not a requirement to write an essay for every chang
 
 - [Slice 1.1: bounded evidence and the agent tool loop](slice-1.1.md)
 - [Slice 1.2: typed UI-to-API boundary](slice-1.2.md)
+- [Slice 1.4: provenance around nondeterministic generation](slice-1.4.md)
